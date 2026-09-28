@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "outline": "#87929b", "on-background": "#e0e1f1", "inverse-surface": "#e0e1f1", "on-tertiary": "#680019", "surface": "#10131e", "secondary-fixed": "#e9ddff", "inverse-primary": "#00658b", "surface-container-low": "#181b26", "surface-container-lowest": "#0b0e18", "on-secondary-fixed-variant": "#5516be", "on-secondary": "#3c0091", "surface-container-high": "#272a35", "surface-variant": "#313440", "secondary-fixed-dim": "#d0bcff", "secondary": "#d0bcff", "on-error-container": "#ffdad6", "secondary-container": "#571bc1", "on-tertiary-container": "#78001f", "primary-fixed": "#c5e7ff", "primary-container": "#00aeec", "surface-dim": "#10131e", "on-surface": "#e0e1f1", "surface-bright": "#363945", "on-secondary-fixed": "#23005c", "tertiary-fixed-dim": "#ffb3b6", "error": "#ffb4ab", "tertiary": "#ffb3b6", "surface-tint": "#7ed0ff", "primary": "#7ed0ff", "primary-fixed-dim": "#7ed0ff", "on-primary-container": "#003d56", "outline-variant": "#3e4850", "background": "#10131e", "on-error": "#690005", "tertiary-container": "#ff7883", "on-tertiary-fixed-variant": "#920027", "on-surface-variant": "#bdc8d1", "tertiary-fixed": "#ffdada", "inverse-on-surface": "#2d303c", "on-primary-fixed": "#001e2d", "surface-container": "#1c1f2a", "on-tertiary-fixed": "#40000c", "on-primary": "#00344a", "on-secondary-container": "#c4abff", "surface-container-highest": "#313440", "on-primary-fixed-variant": "#004c6a", "error-container": "#93000a" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "gutter": "0.75rem", "space-lg": "1rem", "space-xs": "0.25rem", "margin": "1rem", "space-md": "0.75rem", "space-sm": "0.5rem", "space-xl": "1.5rem" }, "fontFamily": { "headline-xl": ["Geist"], "body-sm": ["Geist"], "body-lg": ["Geist"], "body-md": ["Geist"], "headline-lg": ["Geist"], "label-sm": ["JetBrains Mono"], "headline-md": ["Geist"], "label-md": ["JetBrains Mono"], "label-lg": ["JetBrains Mono"] }, "fontSize": { "headline-xl": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }], "body-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "body-md": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-lg": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "500" }], "headline-md": ["15px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "label-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "-0.01em", "fontWeight": "500" }] } } } };</script></head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container select-none min-h-screen"><header class="fixed top-0 left-0 right-0 h-10 bg-surface-container-lowest z-50 flex items-center justify-between px-space-md shadow-[0_1px_8px_rgba(0,0,0,0.25)] select-none"><div class="flex items-center gap-space-md"><img alt="DataPulse AI Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VvLuT20p_YZHhVfpxf89Q-BuMQ1gZGSEtdqMi9fszm2pVjMKM5WhOYJPg81gNgbUkMrdtH0m-Ku-Xlv-S0IJsuU7fSKU_LhPgt0iGqgKMLN6dlFASX0FNx5dCGw-yiJDS1FPqpWVwSNhnVpwRyYTYx7SPEuMxgEw_DS6Sxv03EixWNXo7V5CMLez8FQ54JSWVqL87Li2w45P5jtNwCciZj81RU7t6Rofx5nCDRTUZW0bj0hJ5YJ5cDHsYk"/><div class="flex items-center gap-space-xs"><span class="text-primary font-headline-md font-semibold tracking-tight">DataPulse AI</span><span class="text-on-surface-variant font-label-md px-space-xs py-0.5 rounded bg-surface-container-high text-outline">内容创作决策系统 v0.1.0</span></div><div class="h-3 w-[1px] bg-outline-variant mx-space-xs"></div><div class="flex items-center gap-space-xs px-space-sm py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span><span class="text-on-surface">SQLite 本地单文件</span><span class="text-outline">| 就绪 (可切 MySQL)</span></div></div><div class="flex items-center gap-space-sm"><div class="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1 rounded"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span class="font-label-sm text-secondary">模型: DeepSeek-V3 联机中</span></div><button class="h-6 px-space-sm flex items-center gap-space-xs bg-surface-container-high hover:bg-surface-variant text-on-surface rounded text-label-sm transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">sync</span><span>立即同步数据</span></button><button class="h-6 px-space-sm flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container rounded text-label-sm font-medium transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">auto_awesome</span><span>一键全量分析</span></button><div class="h-4 w-[1px] bg-outline-variant mx-space-xs"></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="flex items-center gap-1 ml-space-xs"><button class="w-6 h-6 flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" title="最小化" type="button"><span class="material-symbols-outlined text-[14px]">remove</span></button><button class="w-6 h-6 flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" title="最大化" type="button"><span class="material-symbols-outlined text-[12px]">check_box_outline_blank</span></button><button class="w-6 h-6 flex items-center justify-center text-outline hover:text-on-error hover:bg-error-container rounded transition-colors" title="关闭" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button></div></div></header><aside class="fixed left-0 top-10 bottom-7 w-64 bg-surface-container-low z-40 flex flex-col justify-between p-space-sm overflow-y-auto"><div class="space-y-space-md"><div class="px-space-sm pt-space-xs"><span class="font-label-sm uppercase tracking-wider text-outline">工作台模块导航</span></div><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded-lg shadow-[0_0_12px_rgba(0,174,236,0.25)]"><a aria-current="page" class="flex items-center justify-between px-space-md py-space-sm transition-all group bg-primary-container text-on-primary-container font-semibold rounded-lg shadow-[0_0_12px_rgba(0,174,236,0.25)]" data-path="dashboard" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">space_dashboard</span><span class="font-body-md">数据看板</span></div><span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-primary">实时</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="analysis" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">insights</span><span class="font-body-md">内容与评论分析</span></div><span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-tertiary">情感</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="ai-copilot" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">neurology</span><span class="font-body-md">AI 决策助手</span></div><span class="font-label-sm px-1.5 py-0.5 rounded bg-secondary-container text-on-secondary-container">DeepSeek</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="data-management" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">database</span><span class="font-body-md">数据源与抓取</span></div><span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant">2 源运行</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="settings" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">tune</span><span class="font-body-md">调度与设置</span></div><span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span></a></nav></div><div class="space-y-space-sm"><div class="p-space-sm rounded-lg bg-surface-container-lowest"><div class="flex items-center justify-between mb-space-xs"><span class="font-label-sm text-outline uppercase">插件与扩展插槽</span><span class="font-label-sm text-secondary bg-surface-container-high px-1 py-0.5 rounded">v1.2</span></div><button class="w-full flex items-center justify-center gap-space-xs py-space-sm px-space-sm rounded bg-surface-container hover:bg-surface-container-high text-primary hover:text-on-surface transition-colors font-body-sm" type="button"><span class="material-symbols-outlined text-[16px]">extension</span><span>+ 添加新数据源 / 模块扩展</span></button><div class="mt-space-xs flex items-center justify-between font-label-sm text-outline"><span class="flex items-center gap-1"><span class="w-1 h-1 rounded-full bg-outline"></span>小红书 / 快手插件预留</span><span class="text-primary hover:underline cursor-pointer">管理</span></div></div></div></aside><div class="pl-64 pb-7"><main class="relative pt-10 min-h-screen bg-surface px-space-lg py-space-md"><div class="flex flex-col w-full space-y-gutter">
+<!-- 1. Top Filter & Action Command Bar -->
+<header class="flex flex-wrap items-center justify-between gap-space-sm bg-surface-container p-space-sm rounded-xl shadow-md">
+<div class="flex flex-wrap items-center gap-space-sm">
+<!-- Platform Segmented Toggles -->
+<div class="inline-flex items-center bg-surface-container-lowest p-0.5 rounded-lg">
+<button class="px-space-md py-1 rounded-md text-label-md font-label-md transition-all text-on-surface bg-surface-container-high shadow-sm flex items-center gap-1.5" data-filter="platform" type="button">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+          全部平台
+        </button>
+<button class="px-space-md py-1 rounded-md text-label-md font-label-md transition-all text-on-surface-variant hover:text-on-surface hover:bg-surface-container flex items-center gap-1.5 group" data-filter="platform" type="button">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container group-hover:scale-125 transition-transform"></span>
+          Bilibili 哔哩哔哩
+        </button>
+<button class="px-space-md py-1 rounded-md text-label-md font-label-md transition-all text-on-surface-variant hover:text-on-surface hover:bg-surface-container flex items-center gap-1.5 group" data-filter="platform" type="button">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container group-hover:scale-125 transition-transform"></span>
+          Douyin 抖音
+        </button>
+</div>
+<!-- Time Range Pills -->
+<div class="inline-flex items-center bg-surface-container-lowest p-0.5 rounded-lg text-label-md font-label-md">
+<button class="px-space-sm py-1 rounded text-on-surface-variant hover:text-on-surface" type="button">近 7 天</button>
+<button class="px-space-sm py-1 rounded bg-surface-container-high text-primary font-medium" type="button">近 30 天</button>
+<button class="px-space-sm py-1 rounded text-on-surface-variant hover:text-on-surface" type="button">本季</button>
+<button class="px-space-sm py-1 rounded text-on-surface-variant hover:text-on-surface flex items-center gap-1" type="button">
+<span>自定义</span>
+<span class="material-symbols-outlined text-[13px]">calendar_today</span>
+</button>
+</div>
+<!-- Account Selector Dropdown -->
+<div class="relative group">
+<button class="h-8 px-space-md bg-surface-container-low hover:bg-surface-container-high rounded-lg text-body-sm font-body-sm text-on-surface flex items-center gap-space-xs transition-colors" type="button">
+<span class="material-symbols-outlined text-primary text-[16px]">verified_user</span>
+<span class="font-medium">科技不打烊</span>
+<span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container text-outline">双平台已关联</span>
+<span class="material-symbols-outlined text-[14px] text-outline">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Quick Actions -->
+<div class="flex items-center gap-space-xs">
+<button class="h-8 px-space-sm bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface rounded-lg text-label-md font-label-md flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[15px]">refresh</span>
+<span>刷新分析结果</span>
+</button>
+<button class="h-8 px-space-md bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container rounded-lg text-label-md font-label-md font-medium flex items-center gap-1.5 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[15px]">ios_share</span>
+<span>导出分析报表 (CSV/PDF)</span>
+</button>
+</div>
+</header>
+<!-- 2. KPI Metrics Grid (4 Modular instrument cards) -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- KPI 1 -->
+<div class="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-outline block">双平台总播放量 (Total Views)</span>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="text-headline-xl font-headline-xl text-on-surface font-semibold">1,482,500</span>
+<span class="text-body-sm font-body-sm text-outline">次</span>
+</div>
+</div>
+<span class="p-1.5 rounded-lg bg-surface-container-high text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">play_circle</span>
+</span>
+</div>
+<!-- Sparkline & Micro Stats -->
+<div class="mt-space-md pt-space-xs">
+<div class="flex items-center justify-between text-label-sm font-label-sm mb-1.5">
+<span class="text-primary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +18.4% 环比
+          </span>
+<span class="text-outline">B站 620K / 抖音 862.5K</span>
+</div>
+<div class="w-full h-8 flex items-end gap-1">
+<span class="flex-1 bg-surface-container-highest rounded-t-sm h-[35%]"></span>
+<span class="flex-1 bg-surface-container-highest rounded-t-sm h-[48%]"></span>
+<span class="flex-1 bg-surface-container-highest rounded-t-sm h-[42%]"></span>
+<span class="flex-1 bg-surface-container-highest rounded-t-sm h-[60%]"></span>
+<span class="flex-1 bg-surface-container-highest rounded-t-sm h-[52%]"></span>
+<span class="flex-1 bg-surface-container-highest rounded-t-sm h-[75%]"></span>
+<span class="flex-1 bg-primary rounded-t-sm h-[100%] shadow-[0_0_8px_rgba(0,174,236,0.3)]"></span>
+</div>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-outline block">综合互动率 (Avg Engagement)</span>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="text-headline-xl font-headline-xl text-on-surface font-semibold">8.65%</span>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-secondary">前 12% 领跑</span>
+</div>
+</div>
+<span class="p-1.5 rounded-lg bg-surface-container-high text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">touch_app</span>
+</span>
+</div>
+<div class="mt-space-md pt-space-xs">
+<div class="flex items-center justify-between text-label-sm font-label-sm mb-1.5">
+<span class="text-secondary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span> +1.28% 较基线
+          </span>
+<span class="text-outline">转赞评/币融合指标</span>
+</div>
+<!-- Dual segmented progress bar -->
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden flex">
+<div class="bg-secondary h-full rounded-l-full" style="width: 58%"></div>
+<div class="bg-primary h-full" style="width: 28%"></div>
+</div>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-outline block">7日净增粉丝 (Net Growth)</span>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="text-headline-xl font-headline-xl text-on-surface font-semibold">+14,290</span>
+<span class="text-body-sm font-body-sm text-outline">人</span>
+</div>
+</div>
+<span class="p-1.5 rounded-lg bg-surface-container-high text-tertiary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">group_add</span>
+</span>
+</div>
+<div class="mt-space-md pt-space-xs">
+<div class="flex items-center justify-between text-label-sm font-label-sm mb-1.5">
+<span class="text-tertiary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">bolt</span> 抖音算法放量贡献 68%
+          </span>
+<span class="text-outline">高转化</span>
+</div>
+<!-- Progress track with milestone indicator -->
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden relative">
+<div class="bg-tertiary-container h-full rounded-full" style="width: 76%"></div>
+</div>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-outline block">传播健康度 (Health Score)</span>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="text-headline-xl font-headline-xl text-primary font-semibold">91.5</span>
+<span class="text-body-sm font-body-sm text-outline">/ 100</span>
+</div>
+</div>
+<span class="p-1.5 rounded-lg bg-surface-container-high text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</span>
+</div>
+<div class="mt-space-md pt-space-xs">
+<div class="flex items-center justify-between text-label-sm font-label-sm mb-1.5">
+<span class="text-primary font-medium">状态：衰减周期优异</span>
+<span class="text-outline">无违规下架</span>
+</div>
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full shadow-[0_0_8px_rgba(126,208,255,0.4)]" style="width: 91.5%"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. Main Analytical Visualizations (2 Columns) -->
+<section class="grid grid-cols-12 gap-gutter">
+<!-- Left: Dual-Platform 30D Trend Comparison (Col 7) -->
+<div class="col-span-12 lg:col-span-7 bg-surface-container-low rounded-xl p-space-md shadow-sm flex flex-col">
+<!-- Widget Header -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pb-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">multiline_chart</span>
+<h2 class="text-headline-md font-headline-md text-on-surface">双平台 30 天播放与互动走势对比</h2>
+</div>
+<div class="flex items-center gap-space-xs">
+<div class="inline-flex bg-surface-container-lowest p-0.5 rounded-md text-label-sm font-label-sm">
+<button class="px-space-sm py-0.5 rounded bg-surface-container-high text-on-surface font-medium" type="button">播放量</button>
+<button class="px-space-sm py-0.5 rounded text-outline hover:text-on-surface" type="button">互动数</button>
+<button class="px-space-sm py-0.5 rounded text-outline hover:text-on-surface" type="button">完播率</button>
+</div>
+<button class="h-6 px-space-xs text-outline hover:text-primary hover:bg-surface-container-high rounded text-label-sm flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span>添加指标</span>
+</button>
+</div>
+</div>
+<!-- Legend & Meta -->
+<div class="flex items-center justify-between py-space-xs text-label-sm font-label-sm">
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-1 bg-primary rounded-full"></span>
+<span class="text-on-surface">B站 (日均 20.6K)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-1 bg-tertiary-container rounded-full"></span>
+<span class="text-on-surface">抖音 (日均 28.7K)</span>
+</div>
+</div>
+<span class="text-outline font-label-sm">采样频率: 6h / 聚合节点: 30</span>
+</div>
+<!-- Vector Chart Canvas with QtCharts styling -->
+<div class="relative w-full h-64 mt-space-sm bg-surface-container-lowest rounded-lg p-space-sm overflow-hidden flex flex-col justify-between">
+<!-- Grid horizontal lines -->
+<div class="absolute inset-x-space-sm top-[20%] h-px bg-surface-container-high"></div>
+<div class="absolute inset-x-space-sm top-[40%] h-px bg-surface-container-high"></div>
+<div class="absolute inset-x-space-sm top-[60%] h-px bg-surface-container-high"></div>
+<div class="absolute inset-x-space-sm top-[80%] h-px bg-surface-container-high"></div>
+<!-- SVG Line curves & Inflection Callout -->
+<svg class="absolute inset-0 w-full h-full p-space-sm" preserveaspectratio="none" viewbox="0 0 700 220">
+<defs>
+<lineargradient id="cyanFill" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#00aeec" stop-opacity="0.25"></stop>
+<stop offset="100%" stop-color="#00aeec" stop-opacity="0"></stop>
+</lineargradient>
+<lineargradient id="pinkFill" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#ff7883" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#ff7883" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<!-- Area Fills -->
+<polygon fill="url(#cyanFill)" points="20,180 80,160 140,150 200,165 260,140 320,135 380,120 440,110 500,105 560,95 620,90 680,80 680,200 20,200"></polygon>
+<polygon fill="url(#pinkFill)" points="20,190 80,175 140,170 200,150 260,160 320,130 380,140 440,50 500,65 560,45 620,55 680,60 680,200 20,200"></polygon>
+<!-- Bilibili Cyan Curve -->
+<polyline fill="none" points="20,180 80,160 140,150 200,165 260,140 320,135 380,120 440,110 500,105 560,95 620,90 680,80" stroke="#00aeec" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></polyline>
+<!-- Douyin Pink Curve -->
+<polyline fill="none" points="20,190 80,175 140,170 200,150 260,160 320,130 380,140 440,50 500,65 560,45 620,55 680,60" stroke="#ff7883" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></polyline>
+<!-- Inflection Point Marker on Douyin Peak (440, 50) -->
+<circle cx="440" cy="50" fill="#ff7883" r="5" stroke="#10131e" stroke-width="2"></circle>
+<circle class="animate-ping" cx="440" cy="50" fill="none" opacity="0.6" r="10" stroke="#ff7883" stroke-width="1.5" style="transform-origin: 440px 50px;"></circle>
+<line opacity="0.6" stroke="#ff7883" stroke-dasharray="3,3" stroke-width="1" x1="440" x2="440" y1="50" y2="200"></line>
+</svg>
+<!-- Dynamic Inflection Floating Tag -->
+<div class="absolute left-[56%] top-3 bg-surface-container-high px-space-sm py-1 rounded-md shadow-md flex items-center gap-1.5 pointer-events-none">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container animate-pulse"></span>
+<span class="text-label-sm font-label-sm text-tertiary">突发放量拐点 (05-18 抖音算法推荐池)</span>
+</div>
+<!-- Axis labels -->
+<div class="relative z-10 flex justify-between text-label-sm font-label-sm text-outline mt-auto pt-2">
+<span>04-25</span>
+<span>05-02</span>
+<span>05-09</span>
+<span class="text-tertiary font-medium">05-16</span>
+<span>05-23</span>
+<span>今日</span>
+</div>
+</div>
+</div>
+<!-- Right: Conversion Funnel & Value Distribution (Col 5) -->
+<div class="col-span-12 lg:col-span-5 bg-surface-container-low rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<!-- Widget Header -->
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[18px]">filter_alt</span>
+<h2 class="text-headline-md font-headline-md text-on-surface">平台流量结构与价值转化漏斗</h2>
+</div>
+<span class="font-label-sm text-outline">端到端融合</span>
+</div>
+<!-- Funnel Stage Bars -->
+<div class="space-y-space-xs py-space-xs">
+<!-- Stage 1 -->
+<div class="bg-surface-container-lowest p-space-xs rounded-lg">
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="text-on-surface font-medium">曝光展示 ➔ 完播 (Plays)</span>
+<span class="text-outline">1,482,500 (100%)</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 42%" title="B站"></div>
+<div class="bg-tertiary-container h-full" style="width: 58%" title="抖音"></div>
+</div>
+</div>
+<!-- Stage 2 -->
+<div class="bg-surface-container-lowest p-space-xs rounded-lg">
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="text-on-surface font-medium">内容点赞 (Likes)</span>
+<span class="text-primary">128,400 (8.66%)</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 36%"></div>
+<div class="bg-tertiary-container h-full" style="width: 64%"></div>
+</div>
+</div>
+<!-- Stage 3 -->
+<div class="bg-surface-container-lowest p-space-xs rounded-lg">
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="text-on-surface font-medium">深度互动 (评论 / 投币 / 收藏)</span>
+<span class="text-secondary">42,910 (2.89%)</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 72%"></div>
+<div class="bg-tertiary-container h-full" style="width: 28%"></div>
+</div>
+</div>
+<!-- Stage 4 -->
+<div class="bg-surface-container-lowest p-space-xs rounded-lg">
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="text-on-surface font-medium">关注转化 (Followers Added)</span>
+<span class="text-tertiary">14,290 (0.96%)</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 32%"></div>
+<div class="bg-tertiary-container h-full" style="width: 68%"></div>
+</div>
+</div>
+</div>
+<!-- Donut & Ratio Meta Footer -->
+<div class="mt-space-xs pt-space-xs flex items-center justify-between bg-surface-container-lowest p-space-sm rounded-lg">
+<div class="flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-high relative">
+<svg class="w-10 h-10 -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="4"></path>
+<path class="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="42, 100" stroke-width="4"></path>
+<path class="text-tertiary-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="58, 100" stroke-dashoffset="-42" stroke-width="4"></path>
+</svg>
+<span class="absolute text-label-sm font-label-sm text-on-surface">58%</span>
+</div>
+<div class="text-label-sm font-label-sm space-y-0.5">
+<div class="text-on-surface"><span class="text-primary font-medium">B站:</span> 收藏转化率是抖音的 <span class="text-primary font-semibold">3.8x</span></div>
+<div class="text-on-surface"><span class="text-tertiary font-medium">抖音:</span> 首屏关注转化率高出 <span class="text-tertiary font-semibold">41%</span></div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">pie_chart</span>
+</div>
+</div>
+</section>
+<!-- 4. Bottom Row: Anomaly Detection Logs & AI Copilot Insights -->
+<section class="grid grid-cols-12 gap-gutter">
+<!-- Left: Anomaly and Inflection Log (Col 6) -->
+<div class="col-span-12 lg:col-span-6 bg-surface-container-low rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-tertiary text-[18px]">troubleshoot</span>
+<h2 class="text-headline-md font-headline-md text-on-surface">近期数据异常与拐点检测日志</h2>
+</div>
+<span class="font-label-sm px-2 py-0.5 rounded bg-surface-container-high text-primary">实时监控中</span>
+</div>
+<!-- List items -->
+<div class="space-y-space-xs divide-y divide-surface-container">
+<!-- Log Item 1 -->
+<div class="pt-space-xs first:pt-0 flex items-start justify-between gap-space-sm group hover:bg-surface-container p-space-xs rounded-lg transition-colors">
+<div class="space-y-1">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm px-1.5 py-0.5 rounded bg-tertiary text-on-tertiary font-semibold">异常放量 05-18</span>
+<span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-tertiary-container">抖音平台</span>
+<span class="text-body-sm font-body-sm text-on-surface font-medium">《AI本地大模型部署实战03》</span>
+</div>
+<p class="text-body-sm font-body-sm text-outline">
+              AI 归因：视频第 00:08 秒抛出悬念激发完播，被推荐池二号池命中，转发比超大盘中位数 3.4 倍。
+            </p>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors text-[18px]">chevron_right</span>
+</div>
+<!-- Log Item 2 -->
+<div class="pt-space-xs flex items-start justify-between gap-space-sm group hover:bg-surface-container p-space-xs rounded-lg transition-colors">
+<div class="space-y-1">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm px-1.5 py-0.5 rounded bg-error-container text-on-error-container font-semibold">衰减预警 05-12</span>
+<span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-primary">B站视频</span>
+<span class="text-body-sm font-body-sm text-on-surface font-medium">《2025架构选型深度横评》</span>
+</div>
+<p class="text-body-sm font-body-sm text-outline">
+              AI 归因：前 45 秒流失率达 34%，开头说明过长，建议后续投稿剪切前导片头直切测试数据。
+            </p>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors text-[18px]">chevron_right</span>
+</div>
+<!-- Log Item 3 -->
+<div class="pt-space-xs flex items-start justify-between gap-space-sm group hover:bg-surface-container p-space-xs rounded-lg transition-colors">
+<div class="space-y-1">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-secondary font-semibold">长尾回温 05-09</span>
+<span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-primary">B站专栏</span>
+<span class="text-body-sm font-body-sm text-on-surface font-medium">《PySide6 状态机管理精讲》</span>
+</div>
+<p class="text-body-sm font-body-sm text-outline">
+              AI 归因：搜索流量持续涌入，在“桌面客户端开发”关键词下排名前三，长尾收益持续增强。
+            </p>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors text-[18px]">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Right: AI Decision & Copilot Insights Summary (Col 6) -->
+<div class="col-span-12 lg:col-span-6 bg-surface-container-low rounded-xl p-space-md shadow-sm flex flex-col justify-between relative overflow-hidden">
+<!-- Ambient decorative gradient glow inside card -->
+<div class="absolute -right-16 -top-16 w-56 h-56 bg-secondary-container opacity-20 blur-3xl rounded-full pointer-events-none"></div>
+<div>
+<!-- AI Card Header with Model badge -->
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="p-1 rounded bg-secondary-container text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">neurology</span>
+</span>
+<div class="flex items-center gap-1.5">
+<h2 class="text-headline-md font-headline-md text-on-surface">AI 快速创作洞察摘要</h2>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-secondary">DeepSeek-V3 Engine</span>
+</div>
+</div>
+<span class="font-label-sm text-outline">决策置信度: 94.2%</span>
+</div>
+<!-- Glassmorphism Analysis Narrative -->
+<div class="mt-space-xs p-space-md rounded-xl bg-surface-container/60 backdrop-blur-md space-y-space-sm shadow-inner">
+<div class="flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-0.5">auto_awesome</span>
+<div class="space-y-space-xs">
+<p class="text-body-md font-body-md text-on-surface leading-relaxed">
+<strong class="text-tertiary">抖音短视频策略：</strong>完播率高度集中在<span class="text-on-surface font-semibold">前 4 秒</span>以内，次级推荐算法对“秒级停留”权重上调。建议下期选题前置冲突或关键对比结论，避免铺垫。
+              </p>
+<p class="text-body-md font-body-md text-on-surface leading-relaxed">
+<strong class="text-primary">B站中长视频策略：</strong>本周期收藏率高达 <span class="text-primary font-semibold">6.2%</span>（超同类 88%），用户极度认可“工程架构与实用代码”，非常适合沉淀系列化深度合集。
+              </p>
+</div>
+</div>
+<!-- Micro AI Suggestions Tags -->
+<div class="flex flex-wrap items-center gap-space-xs pt-space-xs">
+<span class="text-label-sm font-label-sm text-outline">建议执行动作:</span>
+<span class="text-label-sm font-label-sm px-2 py-0.5 rounded-full bg-surface-container-high text-primary hover:bg-surface-variant cursor-pointer transition-colors">+ 生成下期5个爆款开头文案</span>
+<span class="text-label-sm font-label-sm px-2 py-0.5 rounded-full bg-surface-container-high text-secondary hover:bg-surface-variant cursor-pointer transition-colors">+ 提炼B站系列合集大纲</span>
+</div>
+</div>
+</div>
+<!-- Action Button to full Copilot -->
+<div class="pt-space-md flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-outline">已根据最近 38 条内容与 12,000+ 真实评论自动更新</span>
+<button class="h-8 px-space-md bg-secondary-container hover:bg-surface-container-highest text-on-secondary-container hover:text-secondary rounded-lg text-label-md font-label-md font-medium flex items-center gap-1.5 transition-all shadow-sm" type="button">
+<span>进入 AI 助手深入解读</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+<script>
+  // Simple micro-interaction for platform filter toggling
+  document.querySelectorAll('[data-filter="platform"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-filter="platform"]').forEach(b => {
+        b.classList.remove('bg-surface-container-high', 'text-on-surface', 'shadow-sm');
+        b.classList.add('text-on-surface-variant');
+      });
+      btn.classList.add('bg-surface-container-high', 'text-on-surface', 'shadow-sm');
+      btn.classList.remove('text-on-surface-variant');
+    });
+  });
+</script></main></div><footer class="fixed bottom-0 left-0 right-0 h-7 bg-surface-container-lowest z-50 flex items-center justify-between px-space-md shadow-[0_-1px_6px_rgba(0,0,0,0.3)] font-label-sm text-on-surface-variant select-none"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[14px] text-primary">storage</span><span>本地 DB: 42.8 MB</span></div><div class="h-3 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[14px] text-outline">history</span><span>上次同步: 10分钟前</span></div><div class="h-3 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-xs"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span><span>APScheduler: 运行中 (每日 03:00)</span></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[14px] text-secondary">memory</span><span>内存占用: 184MB</span></div><div class="h-3 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-xs text-outline"><span class="material-symbols-outlined text-[14px]">terminal</span><span>Qt Desktop Host: Ready</span></div></div></footer></body></html>

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "outline": "#87929b", "on-background": "#e0e1f1", "inverse-surface": "#e0e1f1", "on-tertiary": "#680019", "surface": "#10131e", "secondary-fixed": "#e9ddff", "inverse-primary": "#00658b", "surface-container-low": "#181b26", "surface-container-lowest": "#0b0e18", "on-secondary-fixed-variant": "#5516be", "on-secondary": "#3c0091", "surface-container-high": "#272a35", "surface-variant": "#313440", "secondary-fixed-dim": "#d0bcff", "secondary": "#d0bcff", "on-error-container": "#ffdad6", "secondary-container": "#571bc1", "on-tertiary-container": "#78001f", "primary-fixed": "#c5e7ff", "primary-container": "#00aeec", "surface-dim": "#10131e", "on-surface": "#e0e1f1", "surface-bright": "#363945", "on-secondary-fixed": "#23005c", "tertiary-fixed-dim": "#ffb3b6", "error": "#ffb4ab", "tertiary": "#ffb3b6", "surface-tint": "#7ed0ff", "primary": "#7ed0ff", "primary-fixed-dim": "#7ed0ff", "on-primary-container": "#003d56", "outline-variant": "#3e4850", "background": "#10131e", "on-error": "#690005", "tertiary-container": "#ff7883", "on-tertiary-fixed-variant": "#920027", "on-surface-variant": "#bdc8d1", "tertiary-fixed": "#ffdada", "inverse-on-surface": "#2d303c", "on-primary-fixed": "#001e2d", "surface-container": "#1c1f2a", "on-tertiary-fixed": "#40000c", "on-primary": "#00344a", "on-secondary-container": "#c4abff", "surface-container-highest": "#313440", "on-primary-fixed-variant": "#004c6a", "error-container": "#93000a" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "gutter": "0.75rem", "space-lg": "1rem", "space-xs": "0.25rem", "margin": "1rem", "space-md": "0.75rem", "space-sm": "0.5rem", "space-xl": "1.5rem" }, "fontFamily": { "headline-xl": ["Geist"], "body-sm": ["Geist"], "body-lg": ["Geist"], "body-md": ["Geist"], "headline-lg": ["Geist"], "label-sm": ["JetBrains Mono"], "headline-md": ["Geist"], "label-md": ["JetBrains Mono"], "label-lg": ["JetBrains Mono"] }, "fontSize": { "headline-xl": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }], "body-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "body-md": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-lg": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "500" }], "headline-md": ["15px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "label-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "-0.01em", "fontWeight": "500" }] } } } };</script></head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container select-none min-h-screen"><header class="fixed top-0 left-0 right-0 h-10 bg-surface-container-lowest z-50 flex items-center justify-between px-space-md shadow-[0_1px_8px_rgba(0,0,0,0.25)] select-none"><div class="flex items-center gap-space-md"><img alt="DataPulse AI Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VvLuT20p_YZHhVfpxf89Q-BuMQ1gZGSEtdqMi9fszm2pVjMKM5WhOYJPg81gNgbUkMrdtH0m-Ku-Xlv-S0IJsuU7fSKU_LhPgt0iGqgKMLN6dlFASX0FNx5dCGw-yiJDS1FPqpWVwSNhnVpwRyYTYx7SPEuMxgEw_DS6Sxv03EixWNXo7V5CMLez8FQ54JSWVqL87Li2w45P5jtNwCciZj81RU7t6Rofx5nCDRTUZW0bj0hJ5YJ5cDHsYk"/><div class="flex items-center gap-space-xs"><span class="text-primary font-headline-md font-semibold tracking-tight">DataPulse AI</span><span class="text-on-surface-variant font-label-md px-space-xs py-0.5 rounded bg-surface-container-high text-outline">内容创作决策系统 v0.1.0</span></div><div class="h-3 w-[1px] bg-outline-variant mx-space-xs"></div><div class="flex items-center gap-space-xs px-space-sm py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span><span class="text-on-surface">SQLite 本地单文件</span><span class="text-outline">| 就绪 (可切 MySQL)</span></div></div><div class="flex items-center gap-space-sm"><div class="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1 rounded"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span class="font-label-sm text-secondary">模型: DeepSeek-V3 联机中</span></div><button class="h-6 px-space-sm flex items-center gap-space-xs bg-surface-container-high hover:bg-surface-variant text-on-surface rounded text-label-sm transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">sync</span><span>立即同步数据</span></button><button class="h-6 px-space-sm flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container rounded text-label-sm font-medium transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">auto_awesome</span><span>一键全量分析</span></button><div class="h-4 w-[1px] bg-outline-variant mx-space-xs"></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="flex items-center gap-1 ml-space-xs"><button class="w-6 h-6 flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" title="最小化" type="button"><span class="material-symbols-outlined text-[14px]">remove</span></button><button class="w-6 h-6 flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" title="最大化" type="button"><span class="material-symbols-outlined text-[12px]">check_box_outline_blank</span></button><button class="w-6 h-6 flex items-center justify-center text-outline hover:text-on-error hover:bg-error-container rounded transition-colors" title="关闭" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button></div></div></header><aside class="fixed left-0 top-10 bottom-7 w-64 bg-surface-container-low z-40 flex flex-col justify-between p-space-sm overflow-y-auto"><div class="space-y-space-md"><div class="px-space-sm pt-space-xs"><span class="font-label-sm uppercase tracking-wider text-outline">工作台模块导航</span></div><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded-lg shadow-[0_0_12px_rgba(0,174,236,0.25)]"><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="dashboard" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">space_dashboard</span><span class="font-body-md">数据看板</span></div><span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-primary">实时</span></a><a aria-current="page" class="flex items-center justify-between px-space-md py-space-sm transition-all group bg-primary-container text-on-primary-container font-semibold rounded-lg shadow-[0_0_12px_rgba(0,174,236,0.25)]" data-path="analysis" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">insights</span><span class="font-body-md">内容与评论分析</span></div><span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-tertiary">情感</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="ai-copilot" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">neurology</span><span class="font-body-md">AI 决策助手</span></div><span class="font-label-sm px-1.5 py-0.5 rounded bg-secondary-container text-on-secondary-container">DeepSeek</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="data-management" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">database</span><span class="font-body-md">数据源与抓取</span></div><span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant">2 源运行</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="settings" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">tune</span><span class="font-body-md">调度与设置</span></div><span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span></a></nav></div><div class="space-y-space-sm"><div class="p-space-sm rounded-lg bg-surface-container-lowest"><div class="flex items-center justify-between mb-space-xs"><span class="font-label-sm text-outline uppercase">插件与扩展插槽</span><span class="font-label-sm text-secondary bg-surface-container-high px-1 py-0.5 rounded">v1.2</span></div><button class="w-full flex items-center justify-center gap-space-xs py-space-sm px-space-sm rounded bg-surface-container hover:bg-surface-container-high text-primary hover:text-on-surface transition-colors font-body-sm" type="button"><span class="material-symbols-outlined text-[16px]">extension</span><span>+ 添加新数据源 / 模块扩展</span></button><div class="mt-space-xs flex items-center justify-between font-label-sm text-outline"><span class="flex items-center gap-1"><span class="w-1 h-1 rounded-full bg-outline"></span>小红书 / 快手插件预留</span><span class="text-primary hover:underline cursor-pointer">管理</span></div></div></div></aside><div class="pl-64 pb-7"><main class="relative pt-10 min-h-screen bg-surface px-space-lg py-space-md"><div class="flex flex-col w-full gap-space-lg select-none">
+<!-- Top Command & Filter Bar -->
+<div class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-space-md p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="space-y-0.5">
+<div class="flex items-center gap-space-sm">
+<span class="inline-flex items-center justify-center w-7 h-7 rounded bg-primary-container/20 text-primary">
+<span class="material-symbols-outlined text-[18px]">query_stats</span>
+</span>
+<h1 class="font-headline-lg text-on-surface tracking-tight">内容分析与评论洞察详情</h1>
+<span class="font-label-sm uppercase px-1.5 py-0.5 rounded bg-surface-container text-primary font-semibold">NLP Engine Online</span>
+</div>
+<p class="font-body-sm text-outline">基于双平台字段对齐模型的作品多维表现、评论情感极性分布与高频词云分析</p>
+</div>
+<!-- Controls Toolbar -->
+<div class="flex flex-wrap items-center gap-space-sm w-full xl:w-auto">
+<!-- Search Input -->
+<div class="relative flex-1 sm:w-64">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">search</span>
+<input class="w-full h-8 pl-8 pr-12 rounded bg-surface-container text-on-surface font-body-sm placeholder:text-outline/70 focus:outline-none focus:bg-surface-container-high transition-colors" id="content-search" placeholder="搜索作品标题 / 评论关键词..." type="text"/>
+<span class="absolute right-2 top-1/2 -translate-y-1/2 font-label-sm text-outline/60 bg-surface-container-lowest px-1 py-0.2 rounded">⌘K</span>
+</div>
+<!-- Platform Segmented Tabs -->
+<div class="flex items-center p-0.5 rounded-lg bg-surface-container-lowest font-body-sm">
+<button class="tab-btn px-2.5 py-1 rounded text-on-surface bg-surface-container-high font-medium text-body-sm transition-all" data-filter="all" type="button">全部平台</button>
+<button class="tab-btn px-2.5 py-1 rounded text-outline hover:text-on-surface font-normal text-body-sm transition-all" data-filter="bili" type="button">Bilibili</button>
+<button class="tab-btn px-2.5 py-1 rounded text-outline hover:text-on-surface font-normal text-body-sm transition-all" data-filter="douyin" type="button">抖音</button>
+</div>
+<!-- Sorting Select -->
+<div class="relative">
+<select class="h-8 pl-2.5 pr-7 rounded bg-surface-container text-on-surface font-body-sm appearance-none cursor-pointer focus:outline-none focus:bg-surface-container-high transition-colors">
+<option>播放降序 (默认)</option>
+<option>综合互动率降序</option>
+<option>评论密度与争议值</option>
+<option>情感正向极性优先</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">expand_more</span>
+</div>
+<!-- Custom Plugin Action -->
+<button class="h-8 px-space-sm flex items-center gap-1.5 rounded bg-surface-container hover:bg-surface-container-high text-primary font-body-sm transition-colors group" type="button">
+<span class="material-symbols-outlined text-[16px] group-hover:rotate-90 transition-transform">extension</span>
+<span>+ 指标计算插件</span>
+</button>
+</div>
+</div>
+<!-- Key Metrics Row (3 High-Density Cards) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Metric 1 -->
+<div class="p-space-md rounded-xl bg-surface-container-low shadow-sm relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-sm text-outline uppercase tracking-wider">双端监控作品总数</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-on-surface font-bold tracking-tight">48</span>
+<span class="font-label-md text-primary font-medium">部在线</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">video_library</span>
+</div>
+</div>
+<div class="mt-3 pt-2 flex items-center justify-between font-label-sm text-outline bg-surface-container-lowest/40 -mx-space-md -mb-space-md px-space-md py-1.5">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 text-on-surface"><span class="w-2 h-2 rounded-sm bg-primary/80"></span>B站 22部</span>
+<span class="text-outline-variant">/</span>
+<span class="inline-flex items-center gap-1 text-on-surface"><span class="w-2 h-2 rounded-sm bg-tertiary-container/80"></span>抖音 26部</span>
+</div>
+<span class="text-primary hover:underline cursor-pointer">自动校对中</span>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="p-space-md rounded-xl bg-surface-container-low shadow-sm relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-outline uppercase tracking-wider">评论语料清洗入库量</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-on-surface font-bold tracking-tight">38,420</span>
+<span class="font-label-md text-secondary font-medium">条纯净文本</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">mark_chat_read</span>
+</div>
+</div>
+<div class="mt-3 pt-2 flex items-center justify-between font-label-sm text-outline bg-surface-container-lowest/40 -mx-space-md -mb-space-md px-space-md py-1.5">
+<span class="text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-tertiary">filter_alt</span>
+          已剔除水军与高仿号 2,150 条 (5.3%)
+        </span>
+<span class="font-label-sm text-secondary bg-secondary-container/20 px-1 rounded">RoBERTa</span>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="p-space-md rounded-xl bg-surface-container-low shadow-sm relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+<span class="font-label-sm text-outline uppercase tracking-wider">全域评论情感极性均值</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-on-surface font-bold tracking-tight">78.2%</span>
+<span class="font-label-md text-primary font-medium">总体正向</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">sentiment_satisfied</span>
+</div>
+</div>
+<!-- Tri-color segmented mini progress bar -->
+<div class="mt-2.5">
+<div class="w-full h-1.5 rounded-full overflow-hidden flex bg-surface-container-lowest">
+<div class="h-full bg-primary" style="width: 78.2%" title="正向 78.2%"></div>
+<div class="h-full bg-outline" style="width: 16.4%" title="中立 16.4%"></div>
+<div class="h-full bg-tertiary-container" style="width: 5.4%" title="负向/争议 5.4%"></div>
+</div>
+</div>
+<div class="mt-2 flex items-center justify-between font-label-sm text-outline">
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span>好评 78.2%</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-outline"></span>中立 16.4%</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span>争议 5.4%</span>
+</div>
+</div>
+</div>
+<!-- Middle Section: Asymmetrical Bento Split -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg">
+<!-- Left Column (7 cols): Performance Matrix Table -->
+<div class="xl:col-span-7 flex flex-col rounded-xl bg-surface-container-low shadow-sm overflow-hidden">
+<!-- Section Header -->
+<div class="h-11 px-space-md flex items-center justify-between bg-surface-container-low">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">table_rows</span>
+<h2 class="font-headline-md text-on-surface">双平台作品综合排行榜</h2>
+<span class="font-label-sm text-outline px-1.5 py-0.5 rounded bg-surface-container-high ml-1">融合数据模型统一视图</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="h-6 px-2 rounded bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-label-sm flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[13px]">tune</span>
+<span>筛选显示列</span>
+</button>
+<button class="h-6 px-2 rounded bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-label-sm flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[13px]">file_download</span>
+<span>导出CSV</span>
+</button>
+</div>
+</div>
+<!-- Table Body -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left font-body-sm">
+<thead>
+<tr class="bg-surface-container-lowest/80 text-outline font-label-sm uppercase tracking-wider">
+<th class="py-2.5 pl-space-md pr-2 font-medium">作品标题与缩略图</th>
+<th class="py-2.5 px-2 font-medium text-center">平台</th>
+<th class="py-2.5 px-2 font-medium">发布周期</th>
+<th class="py-2.5 px-2 font-medium text-right">播放量</th>
+<th class="py-2.5 px-2 font-medium text-right">赞/币</th>
+<th class="py-2.5 px-2 font-medium text-right">互动率</th>
+<th class="py-2.5 px-2 font-medium">情感指数</th>
+<th class="py-2.5 pr-space-md pl-2 font-medium text-right">操作</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container/40">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-2.5 pl-space-md pr-2">
+<div class="flex items-center gap-space-sm max-w-[280px]">
+<div class="w-14 h-9 rounded overflow-hidden flex-shrink-0 bg-surface-container-high relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="High tech deep learning server cluster workstation with futuristic blue cybernetic displays and code windows glowing in dark ambient light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8s1vaB_2Sh4x5gz9NBx3xsofOH4sz7sY8rHaA9pkf96curDWZxb2AKdASr5vZwMnwUnK-9g_3r-qPPPduaOnvkyOzjT8YJMHObvkcgUY5b2ZpVqAVyBQADbBPenmi90IkrNY_7S3Kem4r3uALjF9KzreY1r1R47jrswk9hsn1r6ItXtqcvxBKrk7XeyAvEIjTkOFeYxVhl3ApNAbXxwqWx3-AssuQwIY35TRg1dM5P5DXAnelmsP8sw"/>
+<span class="absolute bottom-0.5 right-0.5 font-label-sm text-[9px] bg-black/80 px-0.5 rounded text-white">14:28</span>
+</div>
+<div class="min-w-0">
+<p class="font-body-md text-on-surface font-medium truncate group-hover:text-primary transition-colors">【深度】大模型本地部署实操指南</p>
+<p class="font-label-sm text-outline truncate">bvid: 1X24y1z89 • 标签: Ollama/DeepSeek</p>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-2 text-center">
+<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded font-label-sm bg-primary-container/20 text-primary font-semibold">B站</span>
+</td>
+<td class="py-2.5 px-2 font-label-sm text-outline">2天前</td>
+<td class="py-2.5 px-2 font-label-md text-on-surface text-right font-medium">184.2K</td>
+<td class="py-2.5 px-2 font-label-md text-on-surface-variant text-right">16.8K</td>
+<td class="py-2.5 px-2 font-label-md text-primary text-right font-semibold">9.12%</td>
+<td class="py-2.5 px-2">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label-sm text-primary">89.4% 正向</span>
+</div>
+</td>
+<td class="py-2.5 pr-space-md pl-2 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="h-6 px-1.5 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-sm transition-colors" title="查看单片详情" type="button">详情</button>
+<button class="h-6 px-1.5 rounded bg-secondary-container/30 hover:bg-secondary-container text-secondary font-label-sm transition-colors flex items-center gap-0.5" title="触发DeepSeek诊断" type="button">
+<span class="material-symbols-outlined text-[12px]">auto_awesome</span>
+<span>AI诊断</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-2.5 pl-space-md pr-2">
+<div class="flex items-center gap-space-sm max-w-[280px]">
+<div class="w-14 h-9 rounded overflow-hidden flex-shrink-0 bg-surface-container-high relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="Dynamic neon smartphone screen playing viral short video content with rapid particle velocity and bright engagement indicators" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDx5PjlWdli3u3-qKZE3KvP2kSjpcOBHCLX1kGaK9pwHJogEhD8PMo8Co0Jw2VnBhBlDXZMkSj0GTMcSeND4vTHGOdWJHzt4ElLknj5AB0yj5VkuWmJX58VsyBixKmF2SPDE84utgTDhjsnH8_lJEhYKNH64uy7OgQhLrRu4xenddb6F8unEdTQkDpsYbPxlqKkUpYvhCt-AfzuqBdsXl4plKNbXaVepDso6JSnm5EUb9fbSVXkqeK0kw"/>
+<span class="absolute bottom-0.5 right-0.5 font-label-sm text-[9px] bg-black/80 px-0.5 rounded text-white">00:58</span>
+</div>
+<div class="min-w-0">
+<p class="font-body-md text-on-surface font-medium truncate group-hover:text-primary transition-colors">普通人如何用AI做短视频？3天播放破百万</p>
+<p class="font-label-sm text-outline truncate">aweme: 7392819 • 标签: 副业/搞钱神器</p>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-2 text-center">
+<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded font-label-sm bg-tertiary-container/20 text-tertiary font-semibold">抖音</span>
+</td>
+<td class="py-2.5 px-2 font-label-sm text-outline">昨日 18:20</td>
+<td class="py-2.5 px-2 font-label-md text-on-surface text-right font-medium">924.5K</td>
+<td class="py-2.5 px-2 font-label-md text-on-surface-variant text-right">48.2K</td>
+<td class="py-2.5 px-2 font-label-md text-primary text-right font-semibold">5.21%</td>
+<td class="py-2.5 px-2">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span class="font-label-sm text-on-surface-variant">72.1% 正向</span>
+</div>
+</td>
+<td class="py-2.5 pr-space-md pl-2 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="h-6 px-1.5 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-sm transition-colors" type="button">详情</button>
+<button class="h-6 px-1.5 rounded bg-secondary-container/30 hover:bg-secondary-container text-secondary font-label-sm transition-colors flex items-center gap-0.5" type="button">
+<span class="material-symbols-outlined text-[12px]">auto_awesome</span>
+<span>AI诊断</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-2.5 pl-space-md pr-2">
+<div class="flex items-center gap-space-sm max-w-[280px]">
+<div class="w-14 h-9 rounded overflow-hidden flex-shrink-0 bg-surface-container-high relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="Sleek video editing timeline workspace on multiple monitors showing dark UI with smooth audio waves and video cuts" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUr5rI01hqm2USx-EUonSEAOUn9m-a96Ge2czhCQHRZmAz3OpkjYi3mwO99Wl2xE2qbBXbsnREQTmwz25ul5u5Ecrxr9MqqGtpCwgBtHsQvw8z1xW-5gnY1BzYR7HIjYq28YBLWKWi8A4h7PsQi1YAhc9739FITpSmlpAusMGp4CBgyd3h3aKpEQ7o_jSS5E9lnXc6-p1b0u-n5iPr09slaVEWBnryL1Aqm8B4MjRF_j2fhqfUFWFL6g"/>
+<span class="absolute bottom-0.5 right-0.5 font-label-sm text-[9px] bg-black/80 px-0.5 rounded text-white">08:12</span>
+</div>
+<div class="min-w-0">
+<p class="font-body-md text-on-surface font-medium truncate group-hover:text-primary transition-colors">这套开源工作流彻底改变了我的剪辑效率</p>
+<p class="font-label-sm text-outline truncate">bvid: 1A990xk1 • 标签: ComfyUI/自动化</p>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-2 text-center">
+<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded font-label-sm bg-primary-container/20 text-primary font-semibold">B站</span>
+</td>
+<td class="py-2.5 px-2 font-label-sm text-outline">3天前</td>
+<td class="py-2.5 px-2 font-label-md text-on-surface text-right font-medium">86.1K</td>
+<td class="py-2.5 px-2 font-label-md text-on-surface-variant text-right">9.4K</td>
+<td class="py-2.5 px-2 font-label-md text-primary text-right font-semibold">10.92%</td>
+<td class="py-2.5 px-2">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label-sm text-primary">94.2% 正向</span>
+</div>
+</td>
+<td class="py-2.5 pr-space-md pl-2 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="h-6 px-1.5 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-sm transition-colors" type="button">详情</button>
+<button class="h-6 px-1.5 rounded bg-secondary-container/30 hover:bg-secondary-container text-secondary font-label-sm transition-colors flex items-center gap-0.5" type="button">
+<span class="material-symbols-outlined text-[12px]">auto_awesome</span>
+<span>AI诊断</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-2.5 pl-space-md pr-2">
+<div class="flex items-center gap-space-sm max-w-[280px]">
+<div class="w-14 h-9 rounded overflow-hidden flex-shrink-0 bg-surface-container-high relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="Technical benchmark comparison bar graphs illuminated in cyan and coral against a matte black background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBz6J41C5r4G8ceF3F4sA5A5jQlm8aNeeO6lUPZz5BsbkUvW1XW61caUtNqn-_e5r2N6GJj-7q20PTESYq9vnQy9Mb5D0FDQs6f6F5XKHB3Pk7OQd3bKJRZL4aO_7ktvP2mM35x4rjPXbuIBGuA07IE4W1nAKf854VVQIJy2uPQfuX6b9GmbgHkSzf2id1SeHMEC9Zljv6Fz696M-BzsE9AflOfRLU-Rk_MryiStCW8KLwbOj2O9qhB9w"/>
+<span class="absolute bottom-0.5 right-0.5 font-label-sm text-[9px] bg-black/80 px-0.5 rounded text-white">01:15</span>
+</div>
+<div class="min-w-0">
+<p class="font-body-md text-on-surface font-medium truncate group-hover:text-primary transition-colors">别再盲目买算力！DeepSeek V3 真实功耗压测</p>
+<p class="font-label-sm text-outline truncate">aweme: 8172901 • 标签: 硬件实测/避坑</p>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-2 text-center">
+<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded font-label-sm bg-tertiary-container/20 text-tertiary font-semibold">抖音</span>
+</td>
+<td class="py-2.5 px-2 font-label-sm text-outline">5天前</td>
+<td class="py-2.5 px-2 font-label-md text-on-surface text-right font-medium">410.3K</td>
+<td class="py-2.5 px-2 font-label-md text-on-surface-variant text-right">22.1K</td>
+<td class="py-2.5 px-2 font-label-md text-primary text-right font-semibold">5.38%</td>
+<td class="py-2.5 px-2">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
+<span class="font-label-sm text-tertiary">争议指数 18%</span>
+</div>
+</td>
+<td class="py-2.5 pr-space-md pl-2 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="h-6 px-1.5 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-sm transition-colors" type="button">详情</button>
+<button class="h-6 px-1.5 rounded bg-secondary-container/30 hover:bg-secondary-container text-secondary font-label-sm transition-colors flex items-center gap-0.5" type="button">
+<span class="material-symbols-outlined text-[12px]">auto_awesome</span>
+<span>AI诊断</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-2.5 pl-space-md pr-2">
+<div class="flex items-center gap-space-sm max-w-[280px]">
+<div class="w-14 h-9 rounded overflow-hidden flex-shrink-0 bg-surface-container-high relative">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="Neural network nodes glowing and connecting with violet synaptic light beams across clean dark interface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBr8lwy3RST7RtWo0fgiyk_f6jZV2RYYTa59-3YeYHsNqideyCd7BD4rr212TNJh9IJFNlzuk6PZXixz6TLO5q8rKjfr3Kv_JIDu8wsCFxQ2Ke9ixsKdQamLUiZohssdtEA12J9-FV-HP-eHwIdY_9PxQevPKwQXWPoy8B7J0ilS9NFKlPlyd2lDY0o7Su-HsvF-QsL26lIip5_GRj2S7di8OLCexKxHUjb3UHc7MVnIBchbPMpK5h5mA"/>
+<span class="absolute bottom-0.5 right-0.5 font-label-sm text-[9px] bg-black/80 px-0.5 rounded text-white">22:04</span>
+</div>
+<div class="min-w-0">
+<p class="font-body-md text-on-surface font-medium truncate group-hover:text-primary transition-colors">从零复现MoE架构：为什么小团队也能训模型？</p>
+<p class="font-label-sm text-outline truncate">bvid: 1Z882c12 • 标签: 论文精读/原理剖析</p>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-2 text-center">
+<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded font-label-sm bg-primary-container/20 text-primary font-semibold">B站</span>
+</td>
+<td class="py-2.5 px-2 font-label-sm text-outline">1周前</td>
+<td class="py-2.5 px-2 font-label-md text-on-surface text-right font-medium">112.9K</td>
+<td class="py-2.5 px-2 font-label-md text-on-surface-variant text-right">15.4K</td>
+<td class="py-2.5 px-2 font-label-md text-primary text-right font-semibold">13.64%</td>
+<td class="py-2.5 px-2">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label-sm text-primary">96.8% 正向</span>
+</div>
+</td>
+<td class="py-2.5 pr-space-md pl-2 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="h-6 px-1.5 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-sm transition-colors" type="button">详情</button>
+<button class="h-6 px-1.5 rounded bg-secondary-container/30 hover:bg-secondary-container text-secondary font-label-sm transition-colors flex items-center gap-0.5" type="button">
+<span class="material-symbols-outlined text-[12px]">auto_awesome</span>
+<span>AI诊断</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Pagination -->
+<div class="h-9 px-space-md bg-surface-container-lowest/40 flex items-center justify-between font-label-sm text-outline mt-auto">
+<span>显示第 1 至 5 条，共 48 条记录</span>
+<div class="flex items-center gap-1">
+<button class="w-5 h-5 flex items-center justify-center rounded bg-surface-container text-on-surface disabled:opacity-40" disabled="" type="button">
+<span class="material-symbols-outlined text-[12px]">chevron_left</span>
+</button>
+<span class="px-1.5 text-on-surface font-semibold">1</span>
+<button class="w-5 h-5 flex items-center justify-center rounded bg-surface-container hover:bg-surface-container-high text-on-surface" type="button">
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right Column (5 cols): Sentiment Polarity & High-Frequency Tag Cloud -->
+<div class="xl:col-span-5 flex flex-col gap-space-md">
+<!-- Card Top: Sentiment Distribution Widget -->
+<div class="p-space-md rounded-xl bg-surface-container-low shadow-sm flex flex-col">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[18px]">psychology</span>
+<h3 class="font-headline-md text-on-surface">评论区情感极性与情绪分布</h3>
+</div>
+<span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-outline">样本: 38,420 条</span>
+</div>
+<div class="space-y-space-sm">
+<!-- Item 1: 赞赏与认同 -->
+<div>
+<div class="flex justify-between font-body-sm mb-1">
+<span class="text-on-surface font-medium flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                赞赏与技术认同
+              </span>
+<span class="font-label-sm text-primary font-semibold">54% (20,746 条)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-500" style="width: 54%"></div>
+</div>
+</div>
+<!-- Item 2: 期待更新与催更 -->
+<div>
+<div class="flex justify-between font-body-sm mb-1">
+<span class="text-on-surface font-medium flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                期待更新与实操催更
+              </span>
+<span class="font-label-sm text-secondary font-semibold">24% (9,220 条)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-secondary rounded-full transition-all duration-500" style="width: 24%"></div>
+</div>
+</div>
+<!-- Item 3: 疑问与配置求助 -->
+<div>
+<div class="flex justify-between font-body-sm mb-1">
+<span class="text-on-surface font-medium flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+                疑问与配置求助
+              </span>
+<span class="font-label-sm text-outline font-semibold">16% (6,147 条)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-outline rounded-full transition-all duration-500" style="width: 16%"></div>
+</div>
+</div>
+<!-- Item 4: 质疑与硬件批评 -->
+<div>
+<div class="flex justify-between font-body-sm mb-1">
+<span class="text-on-surface font-medium flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
+                质疑显卡门槛与实测环境
+              </span>
+<span class="font-label-sm text-tertiary font-semibold">6% (2,305 条)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-tertiary-container rounded-full transition-all duration-500" style="width: 6%"></div>
+</div>
+</div>
+</div>
+<!-- Inline Visual Mini Radar/Distribution Canvas Representation -->
+<div class="mt-space-md pt-space-sm bg-surface-container-lowest/50 rounded-lg p-2.5 flex items-center justify-between">
+<div class="space-y-0.5">
+<span class="font-label-sm text-outline block">争议系数 (Entropy)</span>
+<span class="font-headline-md text-on-surface font-semibold">0.24 <span class="font-label-sm font-normal text-primary">低争议稳健</span></span>
+</div>
+<div class="h-7 w-[1px] bg-outline-variant/30"></div>
+<div class="space-y-0.5">
+<span class="font-label-sm text-outline block">高价值提问率</span>
+<span class="font-headline-md text-on-surface font-semibold">18.6%</span>
+</div>
+<div class="h-7 w-[1px] bg-outline-variant/30"></div>
+<div class="space-y-0.5">
+<span class="font-label-sm text-outline block">负向回流率</span>
+<span class="font-headline-md text-tertiary font-semibold">< 1.2%</span>
+</div>
+</div>
+</div>
+<!-- Card Bottom: High-Frequency Keyword Tag Cloud -->
+<div class="p-space-md rounded-xl bg-surface-container-low shadow-sm flex flex-col flex-1">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">cloud</span>
+<h3 class="font-headline-md text-on-surface">核心热词词云与高频焦点</h3>
+</div>
+<span class="font-label-sm text-primary bg-surface-container px-1.5 py-0.5 rounded cursor-pointer hover:bg-surface-container-high transition-colors">刷新权重</span>
+</div>
+<!-- Weighted Tag Cloud Area -->
+<div class="flex flex-wrap gap-2 items-center justify-center p-3 rounded-lg bg-surface-container-lowest/60 min-h-[160px]">
+<!-- High Weight (Primary Neon) -->
+<span class="px-3 py-1.5 rounded-lg bg-primary-container/20 text-primary font-headline-md hover:bg-primary-container/30 cursor-pointer transition-colors shadow-sm">
+            部署难度 <span class="font-label-sm font-normal opacity-70">4,210</span>
+</span>
+<span class="px-2.5 py-1 rounded bg-secondary-container/20 text-secondary font-body-lg hover:bg-secondary-container/30 cursor-pointer transition-colors">
+            实测好用 <span class="font-label-sm font-normal opacity-70">3,892</span>
+</span>
+<span class="px-3.5 py-2 rounded-xl bg-primary-container/30 text-primary font-headline-lg font-bold hover:scale-105 transition-transform cursor-pointer">
+            显存够用吗 <span class="font-label-sm font-normal opacity-70">5,140</span>
+</span>
+<!-- Medium Weight -->
+<span class="px-2 py-1 rounded bg-surface-container text-on-surface font-body-md hover:text-primary transition-colors cursor-pointer">
+            干货满满 <span class="font-label-sm text-outline">2,910</span>
+</span>
+<span class="px-2.5 py-1.5 rounded-lg bg-surface-container-high text-on-surface font-body-lg hover:text-secondary transition-colors cursor-pointer">
+            效率提升 <span class="font-label-sm text-outline">3,120</span>
+</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-primary font-body-md hover:underline cursor-pointer">
+            求源码 <span class="font-label-sm opacity-70">2,480</span>
+</span>
+<span class="px-2 py-1 rounded bg-surface-container-high text-on-surface font-body-sm hover:text-primary transition-colors cursor-pointer">
+            通俗易懂 <span class="font-label-sm text-outline">1,940</span>
+</span>
+<!-- Alert / Contention Tags (Tertiary Neon) -->
+<span class="px-2 py-1 rounded bg-tertiary-container/20 text-tertiary font-body-sm hover:bg-tertiary-container/30 cursor-pointer transition-colors">
+            卡顿闪退 <span class="font-label-sm opacity-70">842</span>
+</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-outline font-body-sm hover:text-on-surface transition-colors cursor-pointer">
+            更新太快学不动了 <span class="font-label-sm opacity-70">1,204</span>
+</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-md hover:text-primary transition-colors cursor-pointer">
+            Mac M系列能跑吗 <span class="font-label-sm opacity-70">1,580</span>
+</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Section: NLP Insight & Actionable Recommendations (3 Extracted Cards) -->
+<div class="p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">neurology</span>
+<div>
+<h3 class="font-headline-md text-on-surface">观众关注痛点与高频争议抽取</h3>
+<span class="font-label-sm text-outline">基于 DeepSeek-NLP 自动提炼的下一周期内容策略优化建议</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="font-label-sm text-secondary bg-secondary-container/20 px-2 py-0.5 rounded">置信度: 94.6%</span>
+<button class="h-6 px-2 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[13px]">refresh</span>
+<span>重新推理</span>
+</button>
+</div>
+</div>
+<!-- 3 Insight Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Pain Point 1 -->
+<div class="p-space-md rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors flex flex-col justify-between relative group">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-sm px-2 py-0.5 rounded bg-primary-container/20 text-primary font-semibold">核心痛点 01</span>
+<span class="font-label-sm text-outline">B站 & 抖音 综合</span>
+</div>
+<h4 class="font-headline-md text-on-surface font-medium mb-1">显卡配置与本地显存门槛</h4>
+<p class="font-body-sm text-on-surface-variant leading-relaxed">
+            统计显示 <span class="text-primary font-semibold">42%</span> 观众最关心离线部署显存是否会爆。现有视频多用 4090 做演示，导致大量普通玩家产生“配置焦虑”。
+          </p>
+</div>
+<div class="mt-4 pt-2.5 bg-surface-container-lowest/60 -mx-space-md -mb-space-md p-space-sm rounded-b-lg">
+<div class="flex items-center gap-1 text-primary font-label-sm font-semibold mb-0.5">
+<span class="material-symbols-outlined text-[14px]">lightbulb</span>
+<span>AI 下期选题策划建议</span>
+</div>
+<p class="font-body-sm text-on-surface">策划一期《千元级显卡/老款显卡跑本地大模型终极优化》，预期互动率将提升 35% 以上。</p>
+</div>
+</div>
+<!-- Pain Point 2 -->
+<div class="p-space-md rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors flex flex-col justify-between relative group">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-sm px-2 py-0.5 rounded bg-tertiary-container/20 text-tertiary font-semibold">平台特性 02</span>
+<span class="font-label-sm text-tertiary">抖音极速反馈</span>
+</div>
+<h4 class="font-headline-md text-on-surface font-medium mb-1">一键运行需求与命令行畏难</h4>
+<p class="font-body-sm text-on-surface-variant leading-relaxed">
+            抖音端提问最密集集中在 <span class="text-tertiary font-semibold">“怎么双击直接跑”</span>。对于 Git clone、Python 虚拟环境有较高放弃率。
+          </p>
+</div>
+<div class="mt-4 pt-2.5 bg-surface-container-lowest/60 -mx-space-md -mb-space-md p-space-sm rounded-b-lg">
+<div class="flex items-center gap-1 text-tertiary font-label-sm font-semibold mb-0.5">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+<span>短视频运营动作</span>
+</div>
+<p class="font-body-sm text-on-surface">短视频文案应避开命令行术语，交付物打包为单文件 .bat / 一键整合包并置顶群公告。</p>
+</div>
+</div>
+<!-- Pain Point 3 -->
+<div class="p-space-md rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors flex flex-col justify-between relative group">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-sm px-2 py-0.5 rounded bg-secondary-container/20 text-secondary font-semibold">技术深度 03</span>
+<span class="font-label-sm text-secondary">Bilibili 深度粉</span>
+</div>
+<h4 class="font-headline-md text-on-surface font-medium mb-1">底层算法与自建工作流深挖</h4>
+<p class="font-body-sm text-on-surface-variant leading-relaxed">
+            B站技术极客与学生群体对 <span class="text-secondary font-semibold">量化损失、KV Cache 机制</span> 讨论深度极高，长评论占全量分析的 28%。
+          </p>
+</div>
+<div class="mt-4 pt-2.5 bg-surface-container-lowest/60 -mx-space-md -mb-space-md p-space-sm rounded-b-lg">
+<div class="flex items-center gap-1 text-secondary font-label-sm font-semibold mb-0.5">
+<span class="material-symbols-outlined text-[14px]">auto_stories</span>
+<span>深度专栏与置顶互动</span>
+</div>
+<p class="font-body-sm text-on-surface">在评论区置顶高清技术架构图与开源仓库链接，并在置顶动态发起“压测参数征集”。</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple interactive filter tabs logic
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('bg-surface-container-high', 'text-on-surface', 'font-medium');
+        b.classList.add('text-outline', 'font-normal');
+      });
+      btn.classList.add('bg-surface-container-high', 'text-on-surface', 'font-medium');
+      btn.classList.remove('text-outline', 'font-normal');
+    });
+  });
+</script></main></div><footer class="fixed bottom-0 left-0 right-0 h-7 bg-surface-container-lowest z-50 flex items-center justify-between px-space-md shadow-[0_-1px_6px_rgba(0,0,0,0.3)] font-label-sm text-on-surface-variant select-none"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[14px] text-primary">storage</span><span>本地 DB: 42.8 MB</span></div><div class="h-3 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[14px] text-outline">history</span><span>上次同步: 10分钟前</span></div><div class="h-3 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-xs"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span><span>APScheduler: 运行中 (每日 03:00)</span></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[14px] text-secondary">memory</span><span>内存占用: 184MB</span></div><div class="h-3 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-xs text-outline"><span class="material-symbols-outlined text-[14px]">terminal</span><span>Qt Desktop Host: Ready</span></div></div></footer></body></html>

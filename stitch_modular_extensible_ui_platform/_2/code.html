@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "outline": "#87929b", "on-background": "#e0e1f1", "inverse-surface": "#e0e1f1", "on-tertiary": "#680019", "surface": "#10131e", "secondary-fixed": "#e9ddff", "inverse-primary": "#00658b", "surface-container-low": "#181b26", "surface-container-lowest": "#0b0e18", "on-secondary-fixed-variant": "#5516be", "on-secondary": "#3c0091", "surface-container-high": "#272a35", "surface-variant": "#313440", "secondary-fixed-dim": "#d0bcff", "secondary": "#d0bcff", "on-error-container": "#ffdad6", "secondary-container": "#571bc1", "on-tertiary-container": "#78001f", "primary-fixed": "#c5e7ff", "primary-container": "#00aeec", "surface-dim": "#10131e", "on-surface": "#e0e1f1", "surface-bright": "#363945", "on-secondary-fixed": "#23005c", "tertiary-fixed-dim": "#ffb3b6", "error": "#ffb4ab", "tertiary": "#ffb3b6", "surface-tint": "#7ed0ff", "primary": "#7ed0ff", "primary-fixed-dim": "#7ed0ff", "on-primary-container": "#003d56", "outline-variant": "#3e4850", "background": "#10131e", "on-error": "#690005", "tertiary-container": "#ff7883", "on-tertiary-fixed-variant": "#920027", "on-surface-variant": "#bdc8d1", "tertiary-fixed": "#ffdada", "inverse-on-surface": "#2d303c", "on-primary-fixed": "#001e2d", "surface-container": "#1c1f2a", "on-tertiary-fixed": "#40000c", "on-primary": "#00344a", "on-secondary-container": "#c4abff", "surface-container-highest": "#313440", "on-primary-fixed-variant": "#004c6a", "error-container": "#93000a" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "gutter": "0.75rem", "space-lg": "1rem", "space-xs": "0.25rem", "margin": "1rem", "space-md": "0.75rem", "space-sm": "0.5rem", "space-xl": "1.5rem" }, "fontFamily": { "headline-xl": ["Geist"], "body-sm": ["Geist"], "body-lg": ["Geist"], "body-md": ["Geist"], "headline-lg": ["Geist"], "label-sm": ["JetBrains Mono"], "headline-md": ["Geist"], "label-md": ["JetBrains Mono"], "label-lg": ["JetBrains Mono"] }, "fontSize": { "headline-xl": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }], "body-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "body-md": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-lg": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "500" }], "headline-md": ["15px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "label-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "-0.01em", "fontWeight": "500" }] } } } };</script></head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container select-none min-h-screen"><header class="fixed top-0 left-0 right-0 h-10 bg-surface-container-lowest z-50 flex items-center justify-between px-space-md shadow-[0_1px_8px_rgba(0,0,0,0.25)] select-none"><div class="flex items-center gap-space-md"><img alt="DataPulse AI Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VvLuT20p_YZHhVfpxf89Q-BuMQ1gZGSEtdqMi9fszm2pVjMKM5WhOYJPg81gNgbUkMrdtH0m-Ku-Xlv-S0IJsuU7fSKU_LhPgt0iGqgKMLN6dlFASX0FNx5dCGw-yiJDS1FPqpWVwSNhnVpwRyYTYx7SPEuMxgEw_DS6Sxv03EixWNXo7V5CMLez8FQ54JSWVqL87Li2w45P5jtNwCciZj81RU7t6Rofx5nCDRTUZW0bj0hJ5YJ5cDHsYk"/><div class="flex items-center gap-space-xs"><span class="text-primary font-headline-md font-semibold tracking-tight">DataPulse AI</span><span class="text-on-surface-variant font-label-md px-space-xs py-0.5 rounded bg-surface-container-high text-outline">内容创作决策系统 v0.1.0</span></div><div class="h-3 w-[1px] bg-outline-variant mx-space-xs"></div><div class="flex items-center gap-space-xs px-space-sm py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span><span class="text-on-surface">SQLite 本地单文件</span><span class="text-outline">| 就绪 (可切 MySQL)</span></div></div><div class="flex items-center gap-space-sm"><div class="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1 rounded"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span class="font-label-sm text-secondary">模型: DeepSeek-V3 联机中</span></div><button class="h-6 px-space-sm flex items-center gap-space-xs bg-surface-container-high hover:bg-surface-variant text-on-surface rounded text-label-sm transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">sync</span><span>立即同步数据</span></button><button class="h-6 px-space-sm flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container rounded text-label-sm font-medium transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">auto_awesome</span><span>一键全量分析</span></button><div class="h-4 w-[1px] bg-outline-variant mx-space-xs"></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="flex items-center gap-1 ml-space-xs"><button class="w-6 h-6 flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" title="最小化" type="button"><span class="material-symbols-outlined text-[14px]">remove</span></button><button class="w-6 h-6 flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" title="最大化" type="button"><span class="material-symbols-outlined text-[12px]">check_box_outline_blank</span></button><button class="w-6 h-6 flex items-center justify-center text-outline hover:text-on-error hover:bg-error-container rounded transition-colors" title="关闭" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button></div></div></header><aside class="fixed left-0 top-10 bottom-7 w-64 bg-surface-container-low z-40 flex flex-col justify-between p-space-sm overflow-y-auto"><div class="space-y-space-md"><div class="px-space-sm pt-space-xs"><span class="font-label-sm uppercase tracking-wider text-outline">工作台模块导航</span></div><nav class="space-y-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded-lg shadow-[0_0_12px_rgba(0,174,236,0.25)]"><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="dashboard" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">space_dashboard</span><span class="font-body-md">数据看板</span></div><span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-primary">实时</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="analysis" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">insights</span><span class="font-body-md">内容与评论分析</span></div><span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-tertiary">情感</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="ai-copilot" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">neurology</span><span class="font-body-md">AI 决策助手</span></div><span class="font-label-sm px-1.5 py-0.5 rounded bg-secondary-container text-on-secondary-container">DeepSeek</span></a><a aria-current="page" class="flex items-center justify-between px-space-md py-space-sm transition-all group bg-primary-container text-on-primary-container font-semibold rounded-lg shadow-[0_0_12px_rgba(0,174,236,0.25)]" data-path="data-management" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">database</span><span class="font-body-md">数据源与抓取</span></div><span class="font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant">2 源运行</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="settings" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">tune</span><span class="font-body-md">调度与设置</span></div><span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span></a></nav></div><div class="space-y-space-sm"><div class="p-space-sm rounded-lg bg-surface-container-lowest"><div class="flex items-center justify-between mb-space-xs"><span class="font-label-sm text-outline uppercase">插件与扩展插槽</span><span class="font-label-sm text-secondary bg-surface-container-high px-1 py-0.5 rounded">v1.2</span></div><button class="w-full flex items-center justify-center gap-space-xs py-space-sm px-space-sm rounded bg-surface-container hover:bg-surface-container-high text-primary hover:text-on-surface transition-colors font-body-sm" type="button"><span class="material-symbols-outlined text-[16px]">extension</span><span>+ 添加新数据源 / 模块扩展</span></button><div class="mt-space-xs flex items-center justify-between font-label-sm text-outline"><span class="flex items-center gap-1"><span class="w-1 h-1 rounded-full bg-outline"></span>小红书 / 快手插件预留</span><span class="text-primary hover:underline cursor-pointer">管理</span></div></div></div></aside><div class="pl-64 pb-7"><main class="relative pt-10 min-h-screen bg-surface px-space-lg py-space-md"><div class="flex flex-col w-full">
+<!-- Command & Action Ribbon Header -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md pb-space-lg mb-space-md">
+<div class="space-y-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-sm uppercase tracking-wider px-space-xs py-0.5 rounded bg-surface-container-high text-primary">CORE ENGINE // I/O SUBSYSTEM</span>
+<span class="flex items-center gap-1 font-label-sm text-outline">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+          Daemon PID: 4091
+        </span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface">数据源、本地存储与插件扩展管理</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">管理双平台采集接口、本地数据库模型映射、定时抓取任务及大模型 API Key 凭证</p>
+</div>
+<!-- Quick Action Bar -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<button class="h-8 px-space-md flex items-center gap-space-xs rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-md text-label-md transition-all active:scale-95 shadow-sm" id="btn-sync-sample" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary">refresh</span>
+<span>同步样例数据</span>
+</button>
+<button class="h-8 px-space-md flex items-center gap-space-xs rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-md text-label-md transition-all active:scale-95 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">upload_file</span>
+<span>导入外部 CSV</span>
+</button>
+<button class="h-8 px-space-md flex items-center gap-space-xs rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-md text-label-md transition-all active:scale-95 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">folder_zip</span>
+<span>导出数据快照</span>
+</button>
+<button class="h-8 px-space-md flex items-center gap-space-xs rounded bg-primary-container hover:bg-primary text-on-primary font-headline-md text-body-sm font-semibold transition-all active:scale-95 shadow-md shadow-primary/10" type="button">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+<span>重启本地引擎</span>
+</button>
+</div>
+</div>
+<!-- SECTION 1: Modular Source & Adapter Grid -->
+<div class="space-y-space-sm mb-space-xl">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-1.5 h-4 bg-primary rounded-full"></div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">数据源采集与平台插件接入</h2>
+<span class="font-label-sm text-label-sm text-outline">MODULAR COLLECTORS (2 ACTIVE / 1 SLOT AVAIL)</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">HOT-PLUGGABLE DRIVER API v2.4</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-gutter">
+<!-- Card A: Bilibili Collector -->
+<div class="rounded-xl bg-surface-container p-space-md shadow-md flex flex-col justify-between hover:bg-surface-container-high transition-colors group">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">smart_display</span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<h3 class="font-headline-md text-headline-md text-on-surface">Bilibili (哔哩哔哩) 采集器</h3>
+</div>
+<span class="font-label-sm text-label-sm text-outline">DRIVER: bilibili_rest_v1.so</span>
+</div>
+</div>
+<div class="flex items-center gap-1 font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-lowest text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+              正常运行
+            </div>
+</div>
+<div class="grid grid-cols-2 gap-space-xs bg-surface-container-low p-space-sm rounded-lg mb-space-sm font-label-sm text-label-sm">
+<div class="space-y-0.5">
+<span class="text-outline block">绑定 UP 主 UID</span>
+<span class="text-on-surface font-bold">UID: 3829103</span>
+</div>
+<div class="space-y-0.5">
+<span class="text-outline block">抓取执行策略</span>
+<span class="text-on-surface">每日增量 (03:00)</span>
+</div>
+<div class="space-y-0.5">
+<span class="text-outline block">当前收录视频</span>
+<span class="text-primary font-bold">24 篇 (全量)</span>
+</div>
+<div class="space-y-0.5">
+<span class="text-outline block">抓取接口模式</span>
+<span class="text-on-surface-variant">免登录脱机抓取</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<div class="flex items-center gap-space-xs text-outline font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Cookie 有效 (剩余 18天)</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="h-6 px-space-sm rounded bg-surface-container-high hover:bg-surface-variant font-label-sm text-label-sm text-on-surface transition-colors" type="button">配置参数</button>
+<button class="h-6 px-space-sm rounded bg-surface-container-high hover:bg-primary hover:text-on-primary font-label-sm text-label-sm text-primary transition-colors" type="button">抓取单条</button>
+</div>
+</div>
+</div>
+<!-- Card B: Douyin Collector -->
+<div class="rounded-xl bg-surface-container p-space-md shadow-md flex flex-col justify-between hover:bg-surface-container-high transition-colors group">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[20px]">music_note</span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<h3 class="font-headline-md text-headline-md text-on-surface">Douyin (抖音) 采集器</h3>
+</div>
+<span class="font-label-sm text-label-sm text-outline">DRIVER: douyin_sec_v3.bin</span>
+</div>
+</div>
+<div class="flex items-center gap-1 font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-surface-container-lowest text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+              正常运行
+            </div>
+</div>
+<div class="grid grid-cols-2 gap-space-xs bg-surface-container-low p-space-sm rounded-lg mb-space-sm font-label-sm text-label-sm">
+<div class="space-y-0.5">
+<span class="text-outline block">创作者 SecUID / ID</span>
+<span class="text-on-surface font-bold truncate">dy_882912</span>
+</div>
+<div class="space-y-0.5">
+<span class="text-outline block">限制抓取窗口</span>
+<span class="text-on-surface">近 50 条发布</span>
+</div>
+<div class="space-y-0.5">
+<span class="text-outline block">评论深挖档位</span>
+<span class="text-tertiary font-bold">Top 500 条 / 视频</span>
+</div>
+<div class="space-y-0.5">
+<span class="text-outline block">XBogus 签名服务</span>
+<span class="text-on-surface-variant">本地 WASM 运行</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<div class="flex items-center gap-space-xs text-outline font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+<span>接口延迟: 42ms</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="h-6 px-space-sm rounded bg-surface-container-high hover:bg-surface-variant font-label-sm text-label-sm text-on-surface transition-colors" type="button">配置参数</button>
+<button class="h-6 px-space-sm rounded bg-surface-container-high hover:bg-tertiary hover:text-on-tertiary font-label-sm text-label-sm text-tertiary transition-colors" type="button">抓取单条</button>
+</div>
+</div>
+</div>
+<!-- Card C: Hot-Pluggable Slot (Extensibility Showcase) -->
+<div class="rounded-xl bg-surface-container-low/50 hover:bg-surface-container-low p-space-md shadow-inner flex flex-col justify-between transition-all group cursor-pointer relative overflow-hidden">
+<div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-secondary/5 blur-xl pointer-events-none"></div>
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">extension</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">第三方数据源插件槽</h3>
+<span class="font-label-sm text-label-sm text-secondary">PLUGIN HOT-SLOT #03</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm px-space-xs py-0.5 rounded bg-secondary-container text-on-secondary-container">可即插即用</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-sm">
+            一键载入小红书 (XHS)、快手 (Kwai)、微信视频号或 YouTube 爬虫模块。系统统一接入 <code class="font-label-sm text-primary">BaseCollector</code> 抽象协议，无缝接入图表分析引擎。
+          </p>
+<div class="flex flex-wrap gap-1 mb-space-sm">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high font-label-sm text-label-sm text-outline">小红书图文+视频</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high font-label-sm text-label-sm text-outline">快手短视频</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high font-label-sm text-label-sm text-outline">微信视频号</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high font-label-sm text-label-sm text-secondary">+2 社区模板</span>
+</div>
+</div>
+<button class="w-full h-8 flex items-center justify-center gap-space-xs rounded bg-surface-container-highest hover:bg-secondary-container hover:text-on-secondary-container text-on-surface font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+<span>+ 接入新平台插件 (从市场或本地 zip 安装)</span>
+</button>
+</div>
+</div>
+</div>
+<!-- SECTION 2: Unified Multi-Source Data Model & Local DB -->
+<div class="space-y-space-sm mb-space-xl">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-1.5 h-4 bg-secondary rounded-full"></div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">统一多源数据融合模型与本地存储架构</h2>
+<span class="font-label-sm text-label-sm text-outline">ORM: SQLALCHEMY 2.0 / UNIFIED SCHEMA</span>
+</div>
+<!-- Storage Selector Toggle -->
+<div class="flex items-center bg-surface-container-lowest p-0.5 rounded-lg shadow-sm">
+<button class="px-space-md py-1 rounded bg-surface-container-high font-label-sm text-label-sm text-on-surface font-semibold flex items-center gap-space-xs shadow-sm" type="button">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>单文件 SQLite (当前生效 - 零配置即开即用)</span>
+</button>
+<button class="px-space-md py-1 rounded hover:bg-surface-container-low font-label-sm text-label-sm text-outline hover:text-on-surface transition-colors flex items-center gap-space-xs" type="button">
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
+<span>切换至 MySQL (企业级分布式)</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Database Health & Local Path Card (4 cols) -->
+<div class="lg:col-span-4 rounded-xl bg-surface-container p-space-md shadow-md flex flex-col justify-between">
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">LOCAL STORAGE TELEMETRY</span>
+<span class="font-label-sm text-label-sm text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">health_and_safety</span>
+              健康度 100%
+            </span>
+</div>
+<!-- File Target Display -->
+<div class="bg-surface-container-low p-space-sm rounded-lg space-y-1">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-outline">本地持久化数据库物理地址</span>
+<span class="text-primary cursor-pointer hover:underline">浏览目录</span>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-lowest px-space-sm py-1.5 rounded font-label-sm text-label-sm text-on-surface overflow-hidden">
+<span class="material-symbols-outlined text-[14px] text-outline">storage</span>
+<span class="truncate font-mono">./data/datapulse_local.db</span>
+</div>
+</div>
+<!-- Storage Breakdown Visualizer -->
+<div class="space-y-1.5">
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-outline">总容量配额占用: 42.8 MB / 5.0 GB</span>
+<span class="text-on-surface font-mono">0.85%</span>
+</div>
+<div class="h-2 w-full bg-surface-container-lowest rounded-full overflow-hidden flex">
+<div class="h-full bg-primary" style="width: 58%;" title="评论数据 (24.8MB)"></div>
+<div class="h-full bg-secondary" style="width: 28%;" title="作品多模态指标 (12MB)"></div>
+<div class="h-full bg-tertiary" style="width: 14%;" title="每日时序快照 (6MB)"></div>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm text-outline pt-0.5">
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span> 评论情感向量</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> 视频核心度量</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> 日志快照</span>
+</div>
+</div>
+<!-- Metrics Matrix -->
+<div class="grid grid-cols-3 gap-space-xs pt-space-xs">
+<div class="bg-surface-container-low p-space-sm rounded-lg text-center">
+<span class="font-headline-md text-headline-md text-on-surface block">48</span>
+<span class="font-label-sm text-label-sm text-outline">收录视频作品</span>
+</div>
+<div class="bg-surface-container-low p-space-sm rounded-lg text-center">
+<span class="font-headline-md text-headline-md text-primary block">38,420</span>
+<span class="font-label-sm text-label-sm text-outline">抓取评论行</span>
+</div>
+<div class="bg-surface-container-low p-space-sm rounded-lg text-center">
+<span class="font-headline-md text-headline-md text-secondary block">30</span>
+<span class="font-label-sm text-label-sm text-outline">每日指标快照</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-sm pt-space-md">
+<button class="flex-1 h-7 rounded bg-surface-container-high hover:bg-surface-variant font-label-sm text-label-sm text-on-surface transition-colors flex items-center justify-center gap-1" type="button">
+<span class="material-symbols-outlined text-[14px]">cleaning_services</span>
+<span>压缩与优化 SQLite (VACUUM)</span>
+</button>
+<button class="h-7 px-space-sm rounded bg-surface-container-high hover:bg-surface-variant font-label-sm text-label-sm text-outline hover:text-on-surface transition-colors" title="校验哈希" type="button">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+</button>
+</div>
+</div>
+<!-- Data Schema Mapper Preview (8 cols) -->
+<div class="lg:col-span-8 rounded-xl bg-surface-container p-space-md shadow-md flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">schema</span>
+<span class="font-headline-md text-headline-md text-on-surface">统一多源数据实体映射 (Data Model Mapper)</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">自动归一化处理: 异构字段 -> 标准多模态分析实体</span>
+</div>
+<!-- Code / Architecture Mapping Visualization -->
+<div class="rounded-lg bg-surface-container-lowest p-space-sm overflow-x-auto font-mono text-label-sm">
+<table class="w-full text-left">
+<thead>
+<tr class="text-outline border-b border-surface-variant/30 pb-1">
+<th class="py-1 px-space-sm">标准统一实体 (WorkItemModel)</th>
+<th class="py-1 px-space-sm">Bilibili 映射字段 (RAW JSON)</th>
+<th class="py-1 px-space-sm">Douyin 映射字段 (RAW JSON)</th>
+<th class="py-1 px-space-sm">计算/转换规则</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low text-on-surface-variant">
+<tr class="hover:bg-surface-container-low/40">
+<td class="py-1.5 px-space-sm text-primary font-bold">work_id <span class="text-outline font-normal">(PK: str)</span></td>
+<td class="py-1.5 px-space-sm"><span class="bg-surface-container-high px-1 py-0.5 rounded text-on-surface">bvid</span></td>
+<td class="py-1.5 px-space-sm"><span class="bg-surface-container-high px-1 py-0.5 rounded text-on-surface">aweme_id</span></td>
+<td class="py-1.5 px-space-sm text-outline">UUID 统一前缀隔离</td>
+</tr>
+<tr class="hover:bg-surface-container-low/40">
+<td class="py-1.5 px-space-sm text-primary font-bold">platform <span class="text-outline font-normal">(Enum)</span></td>
+<td class="py-1.5 px-space-sm text-secondary">'bilibili'</td>
+<td class="py-1.5 px-space-sm text-tertiary">'douyin'</td>
+<td class="py-1.5 px-space-sm text-outline">自动注入源标记</td>
+</tr>
+<tr class="hover:bg-surface-container-low/40">
+<td class="py-1.5 px-space-sm text-primary font-bold">play_count <span class="text-outline font-normal">(int)</span></td>
+<td class="py-1.5 px-space-sm"><span class="bg-surface-container-high px-1 py-0.5 rounded text-on-surface">stat.view</span></td>
+<td class="py-1.5 px-space-sm"><span class="bg-surface-container-high px-1 py-0.5 rounded text-on-surface">statistics.play_count</span></td>
+<td class="py-1.5 px-space-sm text-outline">纯数值清洗 (排除 NaN)</td>
+</tr>
+<tr class="hover:bg-surface-container-low/40">
+<td class="py-1.5 px-space-sm text-primary font-bold">engagement_rate <span class="text-outline font-normal">(float)</span></td>
+<td class="py-1.5 px-space-sm"><span class="text-outline">(coin*2 + fav*3 + share)/view</span></td>
+<td class="py-1.5 px-space-sm"><span class="text-outline">(digg + comment*2 + share)/play</span></td>
+<td class="py-1.5 px-space-sm text-secondary">双端归一化权重互动公式</td>
+</tr>
+<tr class="hover:bg-surface-container-low/40">
+<td class="py-1.5 px-space-sm text-primary font-bold">comments_ref <span class="text-outline font-normal">(Rel-1:N)</span></td>
+<td class="py-1.5 px-space-sm"><span class="bg-surface-container-high px-1 py-0.5 rounded text-on-surface">replies[].message</span></td>
+<td class="py-1.5 px-space-sm"><span class="bg-surface-container-high px-1 py-0.5 rounded text-on-surface">comments[].text</span></td>
+<td class="py-1.5 px-space-sm text-outline">外键级联写入 `CommentModel`</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-sm font-label-sm text-label-sm">
+<span class="text-outline">系统已开启数据流写入钩子: 采集入库时自动触发轻量预清洗与重复指纹比对 (SHA-256去重)</span>
+<button class="h-6 px-space-sm rounded bg-surface-container-high hover:bg-surface-variant text-primary transition-colors flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[14px]">edit_note</span>
+<span>自定义转换脚本 (custom_mapper.py)</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- SECTION 3: LLM Engine & APScheduler Task Automations -->
+<div class="space-y-space-sm pb-space-lg">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-1.5 h-4 bg-tertiary rounded-full"></div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">大模型与调度任务配置 (AI & Task Scheduler)</h2>
+<span class="font-label-sm text-label-sm text-outline">INFERENCE CO-PILOT & BACKGROUND DAEMONS</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">CRON EXECUTOR: APSCHEDULER 3.10 (ASYNCIO)</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- AI Engine & Key Configuration (6 cols) -->
+<div class="lg:col-span-6 rounded-xl bg-surface-container p-space-md shadow-md space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">neurology</span>
+<h3 class="font-headline-md text-headline-md text-on-surface">推理大脑与语义分析模型接入</h3>
+</div>
+<span class="font-label-sm text-label-sm text-secondary bg-secondary-container px-space-xs py-0.5 rounded">DeepSeek 官方 API</span>
+</div>
+<!-- Provider Selection Pills -->
+<div class="space-y-space-xs">
+<label class="font-label-sm text-label-sm text-outline block">当前大模型底座供应商 (LLM Provider)</label>
+<div class="grid grid-cols-3 gap-space-xs">
+<button class="py-space-sm px-space-sm rounded-lg bg-surface-container-highest text-primary font-label-md text-label-md flex flex-col items-center gap-1 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">psychology</span>
+<span>DeepSeek-V3</span>
+<span class="font-label-sm text-label-sm text-secondary font-normal">(兼容OpenAI)</span>
+</button>
+<button class="py-space-sm px-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md flex flex-col items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">hub</span>
+<span>通义千问 Qwen</span>
+<span class="font-label-sm text-label-sm text-outline font-normal">DashScope API</span>
+</button>
+<button class="py-space-sm px-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md flex flex-col items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">code_blocks</span>
+<span>本地离线规则引擎</span>
+<span class="font-label-sm text-label-sm text-outline font-normal">零Key/正则降级</span>
+</button>
+</div>
+</div>
+<!-- API Key & Base URL Input -->
+<div class="space-y-space-sm">
+<div class="space-y-1">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface">API 凭据密钥 (API Key)</span>
+<span class="text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">lock</span>
+                绝对保存在本机安全配置，永不上传第三方
+              </span>
+</div>
+<div class="relative flex items-center">
+<input class="w-full h-8 px-space-sm pr-20 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm focus:outline-none focus:bg-surface-container-highest transition-colors font-mono" placeholder="sk-..." type="password" value="sk-d9021fba882348a0ec49d019f2a0b9e2"/>
+<button class="absolute right-2 text-outline hover:text-on-surface font-label-sm text-label-sm" type="button">显示明文</button>
+</div>
+</div>
+<div class="space-y-1">
+<span class="font-label-sm text-label-sm text-outline block">自定义 API 接入端点 (Base URL)</span>
+<input class="w-full h-8 px-space-sm rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm focus:outline-none focus:bg-surface-container-highest transition-colors font-mono" type="text" value="https://api.deepseek.com/v1"/>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-label-sm text-label-sm text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary">verified</span>
+              网络连通性测试: 200 OK (210ms)
+            </span>
+<div class="flex items-center gap-space-xs">
+<button class="h-7 px-space-sm rounded bg-surface-container-high hover:bg-surface-variant font-label-sm text-label-sm text-on-surface transition-colors" type="button">验证连通</button>
+<button class="h-7 px-space-md rounded bg-primary hover:bg-primary-container text-on-primary font-headline-md text-body-sm font-semibold transition-colors" type="button">保存配置</button>
+</div>
+</div>
+</div>
+</div>
+<!-- APScheduler Cron Tasks Orchestrator (6 cols) -->
+<div class="lg:col-span-6 rounded-xl bg-surface-container p-space-md shadow-md flex flex-col justify-between">
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">schedule</span>
+<h3 class="font-headline-md text-headline-md text-on-surface">后台自动化定时任务引擎 (APScheduler)</h3>
+</div>
+<span class="font-label-sm text-label-sm text-primary bg-surface-container-highest px-space-xs py-0.5 rounded">调度器活跃中</span>
+</div>
+<!-- Task List -->
+<div class="space-y-space-xs">
+<!-- Task 1 -->
+<div class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between hover:bg-surface-container-high transition-colors">
+<div class="flex items-start gap-space-sm">
+<div class="w-7 h-7 rounded bg-surface-container-highest flex items-center justify-center text-primary mt-0.5">
+<span class="material-symbols-outlined text-[16px]">sync_alt</span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-md text-body-lg text-on-surface">每日双平台指标增量抓取</span>
+<span class="font-label-sm text-label-sm px-1 py-0.5 rounded bg-surface-container-highest text-outline font-mono">0 3 * * *</span>
+</div>
+<p class="font-body-sm text-body-sm text-outline">触发 Bilibili & 抖音接口增量提取，拉取新作品及热门评论</p>
+<span class="font-label-sm text-label-sm text-primary">下次执行: 2025-05-18 03:00:00 (约8小时后)</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<!-- Toggle switch active -->
+<div class="w-9 h-5 bg-primary-container rounded-full relative p-0.5 cursor-pointer flex items-center justify-end">
+<div class="w-4 h-4 bg-on-primary rounded-full shadow-sm"></div>
+</div>
+<button class="w-6 h-6 flex items-center justify-center text-outline hover:text-on-surface" title="立即触发" type="button">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+</button>
+</div>
+</div>
+<!-- Task 2 -->
+<div class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between hover:bg-surface-container-high transition-colors">
+<div class="flex items-start gap-space-sm">
+<div class="w-7 h-7 rounded bg-surface-container-highest flex items-center justify-center text-secondary mt-0.5">
+<span class="material-symbols-outlined text-[16px]">insights</span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-md text-body-lg text-on-surface">自动执行数据异常拐点与AI简报计算</span>
+<span class="font-label-sm text-label-sm px-1 py-0.5 rounded bg-surface-container-highest text-outline font-mono">0 4 * * *</span>
+</div>
+<p class="font-body-sm text-body-sm text-outline">基于抓取完成的数据集，调用 DeepSeek 计算异常波动原因并生成决策日报</p>
+<span class="font-label-sm text-label-sm text-secondary">下次执行: 2025-05-18 04:00:00 (增量采集1小时后)</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<!-- Toggle switch active -->
+<div class="w-9 h-5 bg-primary-container rounded-full relative p-0.5 cursor-pointer flex items-center justify-end">
+<div class="w-4 h-4 bg-on-primary rounded-full shadow-sm"></div>
+</div>
+<button class="w-6 h-6 flex items-center justify-center text-outline hover:text-on-surface" title="立即触发" type="button">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Add Custom Task Button -->
+<button class="mt-space-sm w-full h-8 flex items-center justify-center gap-space-xs rounded bg-surface-container-high hover:bg-surface-variant font-label-md text-label-md text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>+ 添加自定义调度定时任务 (如: 评论高频情感预警 / 跨平台热词同步)</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Notification Banner / Interactive Toast Slot -->
+<div class="fixed bottom-10 right-space-lg bg-surface-container-high px-space-md py-space-sm rounded-lg shadow-xl hidden items-center gap-space-sm text-on-surface z-50" id="toast-slot">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+<span class="font-body-md text-body-md" id="toast-text">样例数据已成功重置并写入 SQLite 本地库</span>
+</div>
+</div>
+<script>
+  // Simple micro-interaction for button feedback
+  document.getElementById('btn-sync-sample')?.addEventListener('click', function() {
+    const toast = document.getElementById('toast-slot');
+    const toastText = document.getElementById('toast-text');
+    if (toast && toastText) {
+      toastText.innerText = '已触发本地引擎：48 条视频样本与 38,420 条评论快照刷新完毕';
+      toast.classList.remove('hidden');
+      toast.classList.add('flex');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+        toast.classList.remove('flex');
+      }, 3500);
+    }
+  });
+</script></main></div><footer class="fixed bottom-0 left-0 right-0 h-7 bg-surface-container-lowest z-50 flex items-center justify-between px-space-md shadow-[0_-1px_6px_rgba(0,0,0,0.3)] font-label-sm text-on-surface-variant select-none"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[14px] text-primary">storage</span><span>本地 DB: 42.8 MB</span></div><div class="h-3 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[14px] text-outline">history</span><span>上次同步: 10分钟前</span></div><div class="h-3 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-xs"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span><span>APScheduler: 运行中 (每日 03:00)</span></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[14px] text-secondary">memory</span><span>内存占用: 184MB</span></div><div class="h-3 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-xs text-outline"><span class="material-symbols-outlined text-[14px]">terminal</span><span>Qt Desktop Host: Ready</span></div></div></footer></body></html>

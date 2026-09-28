@@ -1,0 +1,30 @@
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 本地配置（含大模型 API Key，绝不入库）
+config/settings.json
+config/*.local.json
+.env
+
+# 数据文件（本地库 / 归档 / 导出 / 生成的样例，目录由程序自动创建）
+data/
+logs/
+
+# IDE
+.idea/
+.vscode/
+
+# Reasonix 会话临时文件
+.reasonix/
+
+# 系统
+Thumbs.db
+desktop.ini
