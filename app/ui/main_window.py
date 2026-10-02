@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QSplitter,
     QStackedWidget,
     QStyle,
     QStyledItemDelegate,
@@ -113,8 +114,9 @@ class NavDelegate(QStyledItemDelegate):
             painter.setFont(badge_font)
             width = painter.fontMetrics().horizontalAdvance(badge) + 12
             box = QRectF(rect.right() - width - 8, rect.center().y() - 8, width, 16)
+            # 透明底 + 细边框（与内容区标签保持一致）
             painter.setPen(QPen(QColor(rgba(tone, 76)), 1))
-            painter.setBrush(QColor(rgba(tone, 26)))
+            painter.setBrush(Qt.NoBrush)
             painter.drawRoundedRect(box, 4, 4)
             painter.setPen(QColor(tone))
             painter.drawText(box, Qt.AlignCenter, badge)
@@ -238,6 +240,13 @@ class TitleBar(QFrame):
         self.sync_button.clicked.connect(lambda: window.context.sync_data_repo())
         layout.addWidget(self.sync_button)
 
+        self.chat_button = QPushButton("AI 咨询")
+        self.chat_button.setCheckable(True)
+        self.chat_button.setChecked(True)
+        self.chat_button.setToolTip("在右侧常驻显示 / 隐藏 AI 咨询面板（任意页面都能提问）")
+        self.chat_button.toggled.connect(window.toggle_chat_panel)
+        layout.addWidget(self.chat_button)
+
         self.analyze_button = QPushButton("一键全量分析")
         self.analyze_button.setObjectName("PrimaryButton")
         self.analyze_button.clicked.connect(lambda: window.context.run_analysis())
@@ -330,12 +339,37 @@ class MainWindow(QMainWindow):
         self.stack = QStackedWidget()
         for page in self.pages:
             self.stack.addWidget(page)
-        layout.addWidget(self.stack, 1)
+
+        # 中间工作区 + 右侧常驻 AI 咨询面板（任意页面都能直接提问）
+        from app.ui.widgets.ai_chat import AiChatPanel
+
+        self.workspace = QSplitter(Qt.Horizontal)
+        self.workspace.setChildrenCollapsible(False)
+        self.workspace.addWidget(self.stack)
+        self.chat_panel = AiChatPanel(self.context, compact=True)
+        self.chat_panel.setMinimumWidth(300)
+        self.workspace.addWidget(self.chat_panel)
+        self.workspace.setStretchFactor(0, 1)
+        self.workspace.setStretchFactor(1, 0)
+        self.workspace.setSizes([980, 380])
+        layout.addWidget(self.workspace, 1)
         outer.addWidget(body, 1)
         self.setCentralWidget(central)
 
         self.nav.setCurrentRow(0)
         self._build_status_bar()
+
+    # ------------------------------------------------------------------ #
+    def toggle_chat_panel(self, visible: bool) -> None:
+        """显示 / 隐藏右侧常驻 AI 咨询面板（顶栏「AI 咨询」开关）。"""
+        self.chat_panel.setVisible(visible)
+        if visible:
+            sizes = self.workspace.sizes()
+            if sizes[1] < 300:
+                self.workspace.setSizes([max(520, sizes[0] + sizes[1] - 380), 380])
+        self.context.status_message.emit(
+            "AI 咨询面板已" + ("打开，可在当前页面直接提问" if visible else "收起")
+        )
 
     def _build_sidebar(self) -> QWidget:
         side = QFrame()

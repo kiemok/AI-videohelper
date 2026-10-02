@@ -30,6 +30,7 @@ class AppContext(QObject):
     report_updated = Signal()  # 新生成 AI 报告（看板回显刷新）
     settings_changed = Signal()  # 配置变化（大模型/数据库）
     theme_changed = Signal(str)  # 外观主题切换（浅黑/浅白/浅蓝）
+    chat_message = Signal(str, str, bool)  # AI 对话消息（role, content, is_fallback）
     status_message = Signal(str)  # 状态栏提示
 
     def __init__(self) -> None:
@@ -42,6 +43,9 @@ class AppContext(QObject):
         self.runner = TaskRunner(self)
         self.metrics: dict[str, Any] = {}
         self.busy = False
+        # AI 咨询会话：右侧常驻面板与「AI 决策助手」页共用同一份上下文
+        self.chat_history: list[dict[str, str]] = []
+        self.chat_session_id: int | None = None
         self.scheduler = DailyScheduler(self)
         self.scheduler.due.connect(self._on_schedule_due)
         if self.settings.schedule_enabled:
@@ -247,6 +251,59 @@ class AppContext(QObject):
     def latest_brief(self) -> dict[str, Any] | None:
         """最近一份「数据简报」，供看板回显（不重新调用大模型）。"""
         return latest_report(self.db_url, "daily_brief")
+
+    # ------------------------------------------------------------------ #
+    # AI 咨询（右侧常驻面板与 AI 决策助手页共用）
+    # ------------------------------------------------------------------ #
+    def ask_ai(self, question: str, force_local: bool = False) -> None:
+        """统一的 AI 问答入口：在任意页面都可发起咨询。
+
+        消息通过 ``chat_message`` 信号广播，所有已挂载的咨询面板会同步显示，
+        因此右侧常驻面板与「AI 决策助手」页的对话内容始终一致。
+        """
+        question = (question or "").strip()
+        if not question:
+            return
+        if self.busy:
+            self.status_message.emit("当前仍有任务在执行，请稍候再提问")
+            return
+
+        self.set_busy(True, "AI 正在思考…")
+        self.chat_message.emit("user", question, False)
+
+        def job() -> dict[str, Any]:
+            return self.insights.ask(
+                question,
+                self.metrics,
+                list(self.chat_history),
+                self.chat_session_id,
+                force_local,
+            )
+
+        def done(result: dict[str, Any]) -> None:
+            self.chat_session_id = result.get("session_id") or self.chat_session_id
+            self.chat_history.append({"role": "user", "content": question})
+            self.chat_history.append(
+                {"role": "assistant", "content": result.get("content", "")}
+            )
+            self.chat_message.emit(
+                "assistant", result.get("content", ""), bool(result.get("is_fallback"))
+            )
+            source = (
+                "本地规则引擎"
+                if result.get("is_fallback")
+                else f"{result.get('provider')}/{result.get('model')}"
+            )
+            self.set_busy(False, f"AI 回答完成（{source}）")
+
+        self.runner.submit(job, done, lambda error: self._on_error(error, "AI 问答失败"))
+
+    def reset_chat(self) -> None:
+        """开启新一轮 AI 会话（清空上下文，历史消息仍保存在数据库中）。"""
+        self.chat_history.clear()
+        self.chat_session_id = None
+        self.chat_message.emit("reset", "", False)
+        self.status_message.emit("已开启新的 AI 会话")
 
     def export_analysis(self) -> None:
         """导出当前分析报表（Markdown 汇总 + 作品榜 CSV）到 data/export/。"""

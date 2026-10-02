@@ -135,7 +135,7 @@ class PlatformBadgeDelegate(QStyledItemDelegate):
             18,
         )
         painter.setPen(QPen(QColor(rgba(color.name(), 90)), 1))
-        painter.setBrush(QColor(rgba(color.name(), 34)))
+        painter.setBrush(Qt.NoBrush)  # 透明底，仅保留细边框
         painter.drawRoundedRect(rect, 9, 9)
         painter.setPen(color)
         painter.drawText(rect, Qt.AlignCenter, text)
@@ -163,8 +163,17 @@ def configure_table(
     table.horizontalHeader().setFixedHeight(header_height)
     table.horizontalHeader().setHighlightSections(False)
     table.setFrameShape(QTableView.NoFrame)
+    header = table.horizontalHeader()
+    columns = getattr(table.model(), "columns", None)
+    if columns:
+        # 把 Column.width 真正应用到表头。否则 Qt 一律使用默认列宽（100px），
+        # 列数多时总宽超出视口，Stretch 列会被挤到最小（标题只剩 "--"）。
+        for index, column in enumerate(columns):
+            if index == stretch_column:
+                continue
+            header.resizeSection(index, column.width)
     if stretch_column is not None:
-        table.horizontalHeader().setSectionResizeMode(stretch_column, QHeaderView.Stretch)
+        header.setSectionResizeMode(stretch_column, QHeaderView.Stretch)
     if platform_column is not None:
         table.setItemDelegateForColumn(platform_column, PlatformBadgeDelegate(table))
 

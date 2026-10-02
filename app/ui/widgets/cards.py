@@ -380,11 +380,11 @@ def hstack(*widgets: QWidget, spacing: int = 8, margins: int = 0) -> QWidget:
 
 
 def chip(text: str, tone: str = "muted") -> QLabel:
-    """行内小胶囊（热词、标签）。"""
+    """行内小胶囊（热词、标签）：透明底 + 细边框。"""
     label = QLabel(text)
     color = tone_color(tone)
     label.setStyleSheet(
-        f"background-color: {rgba(color, 26)}; color: {color};"
+        f"background-color: transparent; color: {color};"
         f" border: 1px solid {rgba(color, 60)}; padding: 3px 9px;"
         " border-radius: 10px; font-size: 11px;"
     )

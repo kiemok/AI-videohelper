@@ -8,16 +8,13 @@
 
 from __future__ import annotations
 
-import html
 from typing import Any
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QTextDocument
 from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QPushButton,
     QSplitter,
     QTextBrowser,
@@ -27,22 +24,14 @@ from PySide6.QtWidgets import (
 
 from app.ui.context import AppContext
 from app.ui.theme import COLORS
-from app.ui.widgets.cards import Badge, ModuleCard, Pill, StatusDot, hint_label, muted_label
-
-QUICK_QUESTIONS: tuple[str, ...] = (
-    "抖音和B站哪个平台互动更好？",
-    "我这一周应该优先做哪几个选题？",
-    "为什么上周视频播放量下降了？",
-    "评论区主要在意什么？",
-)
+from app.ui.widgets.ai_chat import AiChatPanel
+from app.ui.widgets.cards import Badge, ModuleCard, Pill, StatusDot, hint_label
 
 
 class AiPage(QWidget):
     def __init__(self, context: AppContext, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.context = context
-        self.session_id: int | None = None
-        self.history: list[dict[str, str]] = []
         self._build()
         context.settings_changed.connect(self.refresh_status)
         context.metrics_updated.connect(lambda _metrics: self.refresh_status())
@@ -60,15 +49,13 @@ class AiPage(QWidget):
         left.addWidget(self._build_topic_card())
         left.setSizes([420, 320])
         splitter.addWidget(left)
-        splitter.addWidget(self._build_chat_card())
+        # 问答区复用「AI 咨询面板」：与右侧常驻面板共享同一会话上下文
+        self.chat_panel = AiChatPanel(self.context, compact=False)
+        splitter.addWidget(self.chat_panel)
         splitter.setSizes([860, 520])
         root.addWidget(splitter, 1)
 
         root.addWidget(self._build_footer())
-        self._append_chat(
-            "assistant",
-            "你好，我是你的内容创作助手。你可以问我关于播放、互动率、健康度、评论口碑、选题方向的问题。",
-        )
 
     def _build_engine_bar(self) -> QWidget:
         bar = QWidget()
@@ -133,42 +120,6 @@ class AiPage(QWidget):
         card.add_widget(self.topic_view, 1)
         return card
 
-    def _build_chat_card(self) -> QWidget:
-        card = ModuleCard("创作顾问 Copilot", "已融合 B站 + 抖音双端数据")
-        card.add_header_widget(Badge("RAG 上下文", "violet"))
-        self.chat_view = QTextBrowser()
-        card.add_widget(self.chat_view, 1)
-
-        self.chat_hint = muted_label("")
-        card.add_widget(self.chat_hint)
-
-        input_row = QWidget()
-        input_layout = QHBoxLayout(input_row)
-        input_layout.setContentsMargins(0, 0, 0, 0)
-        input_layout.setSpacing(6)
-        self.question_edit = QLineEdit()
-        self.question_edit.setPlaceholderText("基于当前多平台数据向 AI 提问，例如：分析为什么上周视频播放量下降了？")
-        self.question_edit.returnPressed.connect(self._ask)
-        input_layout.addWidget(self.question_edit, 1)
-        self.send_button = QPushButton("发送")
-        self.send_button.setObjectName("PrimaryButton")
-        self.send_button.clicked.connect(self._ask)
-        input_layout.addWidget(self.send_button)
-        card.add_widget(input_row)
-
-        quick = QWidget()
-        quick_layout = QHBoxLayout(quick)
-        quick_layout.setContentsMargins(0, 0, 0, 0)
-        quick_layout.setSpacing(6)
-        for question in QUICK_QUESTIONS[:2]:
-            button = QPushButton(question)
-            button.setObjectName("Segment")
-            button.clicked.connect(lambda _checked=False, text=question: self._ask_preset(text))
-            quick_layout.addWidget(button)
-        quick_layout.addStretch(1)
-        card.add_widget(quick)
-        return card
-
     def _build_footer(self) -> QWidget:
         bar = QWidget()
         layout = QHBoxLayout(bar)
@@ -203,9 +154,9 @@ class AiPage(QWidget):
     def _set_busy(self, busy: bool, message: str) -> None:
         for button in self.action_buttons.values():
             button.setEnabled(not busy)
-        self.send_button.setEnabled(not busy)
         self.brief_button.setEnabled(not busy)
-        self.chat_hint.setText(message)
+        self.chat_panel.send_button.setEnabled(not busy)
+        self.chat_panel.status_label.setText(message)
         self.context.set_busy(busy, message)
 
     # ------------------------------------------------------------------ #
@@ -241,48 +192,5 @@ class AiPage(QWidget):
         return service.suggest_publish_time(metrics, force_local=force_local)
 
     # ------------------------------------------------------------------ #
-    def _ask_preset(self, question: str) -> None:
-        self.question_edit.setText(question)
-        self._ask()
-
-    def _ask(self) -> None:
-        question = self.question_edit.text().strip()
-        if not question:
-            return
-        self.question_edit.clear()
-        self._append_chat("user", question)
-        self._set_busy(True, "正在思考…")
-
-        def done(result: dict[str, Any]) -> None:
-            self.session_id = result.get("session_id") or self.session_id
-            self.history.append({"role": "user", "content": question})
-            self.history.append({"role": "assistant", "content": result.get("content", "")})
-            self._append_chat("assistant", result.get("content", ""))
-            self._set_busy(False, f"回答完成（{result.get('provider')}/{result.get('model')}）")
-
-        def failed(error: str) -> None:
-            self._append_chat("assistant", f"生成失败：{error}")
-            self._set_busy(False, "生成失败")
-
-        self.context.runner.submit(
-            self.context.insights.ask,
-            done,
-            failed,
-            question,
-            self.context.metrics,
-            list(self.history),
-            self.session_id,
-            self.force_local_box.isChecked(),
-        )
-
-    def _append_chat(self, role: str, content: str) -> None:
-        prefix = "🧑 我" if role == "user" else "🤖 Copilot"
-        self.chat_view.append(f"<p><b>{prefix}</b></p>")
-        if role == "user":
-            self.chat_view.append(html.escape(content).replace("\n", "<br/>"))
-        else:
-            document = QTextDocument()
-            document.setMarkdown(content)
-            self.chat_view.append(document.toHtml())
-        scrollbar = self.chat_view.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+    # 问答（提问与显示均由共享的 AiChatPanel 负责，见 app/ui/widgets/ai_chat.py）
+    # ------------------------------------------------------------------ #

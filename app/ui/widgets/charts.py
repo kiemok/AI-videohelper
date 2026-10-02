@@ -28,11 +28,11 @@ from PySide6.QtCharts import (
     QValueAxis,
 )
 from PySide6.QtCore import QDateTime, QMargins, QRectF, Qt
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPainterPath, QPen
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from app.config import platform_label
-from app.ui.theme import COLORS, PLATFORM_COLORS, SENTIMENT_COLORS, rgba
+from app.ui.theme import COLORS, PLATFORM_COLORS, SENTIMENT_COLORS
 
 def _health_color() -> str:
     """健康度曲线颜色（运行时取值，随主题变化）。"""
@@ -348,12 +348,8 @@ class TopicCloud(QWidget):
             painter.drawText(self.rect(), Qt.AlignCenter, "暂无热词数据")
             painter.end()
             return
+        # 词云采用纯文字形态：不绘制底色与边框，仅用字号与颜色表达权重
         for text, rect, font, color in self._items:
-            painter.setPen(QPen(QColor(rgba(color.name(), 80)), 1))
-            painter.setBrush(QColor(rgba(color.name(), 26)))
-            path = QPainterPath()
-            path.addRoundedRect(rect, 10, 10)
-            painter.drawPath(path)
             painter.setFont(font)
             painter.setPen(color)
             painter.drawText(rect, Qt.AlignCenter, text)

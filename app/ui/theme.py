@@ -269,7 +269,7 @@ QFrame#TitleBar {{
 QLabel#AppName {{ font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }}
 QLabel#AppVersion {{ color: {c["text_muted"]}; font-size: 11px; font-family: {FONT_MONO}; }}
 QLabel#Pill {{
-    background-color: {c["surface1"]};
+    background-color: transparent;
     border: 1px solid {c["border"]};
     border-radius: 12px;
     padding: 3px 10px;
@@ -342,34 +342,34 @@ QLabel#KpiUnit {{ font-size: 12px; color: {c["text_dim"]}; }}
 QLabel#KpiDelta {{ font-size: 11px; font-family: {FONT_MONO}; }}
 QLabel#KpiHint {{ font-size: 11px; color: {c["text_muted"]}; }}
 
-/* ---------- 徽标 / 状态点 ---------- */
+/* ---------- 徽标 / 状态点（透明底，仅保留细边框与文字色） ---------- */
 QLabel#Badge {{
     font-family: {FONT_MONO};
     font-size: 10px;
     letter-spacing: 0.4px;
     padding: 2px 6px;
     border-radius: {RADIUS_CONTROL}px;
-    background-color: {c["surface3"]};
+    background-color: transparent;
     color: {c["text_dim"]};
     border: 1px solid {c["border"]};
 }}
 QLabel#Badge[tone="cyan"] {{
-    background-color: {rgba(c["cyan"], _alpha(26))};
+    background-color: transparent;
     color: {c["cyan"]};
     border: 1px solid {rgba(c["cyan"], _alpha(76))};
 }}
 QLabel#Badge[tone="violet"] {{
-    background-color: {rgba(c["violet"], _alpha(30))};
+    background-color: transparent;
     color: {c["violet"]};
     border: 1px solid {rgba(c["violet"], _alpha(76))};
 }}
 QLabel#Badge[tone="coral"] {{
-    background-color: {rgba(c["coral"], _alpha(26))};
+    background-color: transparent;
     color: {c["coral"]};
     border: 1px solid {rgba(c["coral"], _alpha(76))};
 }}
 QLabel#Badge[tone="green"] {{
-    background-color: {rgba(c["green"], _alpha(26))};
+    background-color: transparent;
     color: {c["green"]};
     border: 1px solid {rgba(c["green"], _alpha(76))};
 }}
@@ -617,10 +617,10 @@ QStatusBar::item {{ border: none; }}
 
 
 def badge_qss(tone: str) -> str:
-    """行内徽标样式（运行时生成，支持主题切换）。"""
+    """行内徽标样式（运行时生成；透明底 + 细边框，支持主题切换）。"""
     color = tone_color(tone)
     return (
-        f"background-color: {rgba(color, _alpha(26))}; color: {color};"
+        f"background-color: transparent; color: {color};"
         f" border: 1px solid {rgba(color, _alpha(76))}; border-radius: 4px;"
         f" padding: 1px 6px; font-family: {FONT_MONO}; font-size: 10px;"
     )

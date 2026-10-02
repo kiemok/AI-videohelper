@@ -1,5 +1,6 @@
 """可复用界面组件（Deep Telemetry 设计系统）。"""
 
+from app.ui.widgets.ai_chat import QUICK_QUESTIONS, AiChatPanel
 from app.ui.widgets.cards import (
     Badge,
     KpiCard,
@@ -40,6 +41,8 @@ from app.ui.widgets.tables import (
 )
 
 __all__ = [
+    "AiChatPanel",
+    "QUICK_QUESTIONS",
     "Badge",
     "KpiCard",
     "ModuleCard",

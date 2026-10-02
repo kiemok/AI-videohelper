@@ -31,6 +31,7 @@ from app.ui import theme as theme_module  # noqa: E402
 
 #: 导航顺序：看板 / 分析与评论 / AI 助手 / 创作咨询 / AI 短剧 / 数据源 / 设置
 PAGES = ("dashboard", "analysis", "ai", "consulting", "drama", "data", "settings")
+INDEX_DASHBOARD = 0
 INDEX_AI = 2
 INDEX_CONSULTING = 3
 INDEX_DRAMA = 4
@@ -118,9 +119,10 @@ class Driver:
 
         elif phase == "chat":
             log("[gui] 触发数据问答…")
-            self.window.nav.setCurrentRow(INDEX_AI)
-            self.window.ai_page.question_edit.setText("抖音和B站哪个平台互动更好？")
-            self.window.ai_page._ask()
+            self.window.nav.setCurrentRow(INDEX_DASHBOARD)
+            # 在「数据看板」页直接用右侧常驻面板提问，验证"任意页面都能咨询"
+            self.window.chat_panel.question_edit.setText("抖音和B站哪个平台互动更好？")
+            self.window.chat_panel.ask()
             self.phase = "wait_chat"
 
         elif phase == "wait_chat":
