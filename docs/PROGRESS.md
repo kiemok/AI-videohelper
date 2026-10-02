@@ -368,6 +368,18 @@ $env:QT_QPA_PLATFORM="windows"; .\.venv\Scripts\python.exe scripts\gui_smoke.py 
 
 ---
 
+### 10.4 修复（v0.4.1）
+
+| 问题 | 现象 | 根因 | 修复 |
+| --- | --- | --- | --- |
+| **咨询类型显示英文** | 「视频创作咨询」页的分类按钮显示 `general / positioning / script …` | `consulting/prompts.py` 中 `CATEGORIES` 定义为 `(内部 key, 显示标签)`，而 `SegmentBar` 期望 `(显示标签, key)`——顺序写反了 | 统一 `CATEGORIES` 为 **(label, key)** 顺序并加注释；`CATEGORY_LABELS` 改为由 key→label 推导，避免再次错位 |
+| **保存配置会把主题重置为浅黑** | 在浅白 / 浅蓝主题下配置并保存 API Key，界面自动跳回浅黑 | `SettingsPage.collect_settings()` 用 `AppSettings(...)` **重建**配置对象时未传 `theme`，于是取默认值 `dark`；`apply_settings()` 判定"主题变化"便切回浅黑（同理也会丢 `data_repo`） | 改用 `dataclasses.replace(当前配置, ...)` 只覆盖表单字段——由其它入口维护的字段不再丢失；主题以 `AppContext.settings.theme` 为准，UI 值仅作兜底 |
+
+**验证**：连续四轮（浅白 → 浅蓝 → 浅黑 → 浅蓝）切换后各保存一次配置，主题均保持不变，
+设置页 UI 与配置同步；咨询分类按钮全部为中文且内部 key 仍为 `general/positioning/...`。
+
+---
+
 ## 十一、变更记录
 
 | 日期 | 版本 | 内容 |
@@ -378,3 +390,4 @@ $env:QT_QPA_PLATFORM="windows"; .\.venv\Scripts\python.exe scripts\gui_smoke.py 
 | 2026-09-29 | v0.3.0 | **数据来源改造**：移除软件内爬取功能（删除 B站/抖音采集器与注册表），新增 `app/datasource`（git/ZIP/本地目录同步 + 仓库扫描解析 + 数据模板）；「数据源与抓取」页重构为「数据仓库与导入」；配置新增 `data_repo`；定时任务支持"先拉取仓库再分析"；新增 `scripts/repo_check.py` 端到端验证 |
 | 2026-09-29 | v0.3.1 | 修复「数据仓库与导入」页在小窗口下被压缩/裁切的问题：页面套滚动区 + 卡片最小高度 + 主窗口按屏幕自适应（最小 900×620）；窄窗口下工具栏与顶栏文案优化（次要操作移入菜单） |
 | 2026-09-29 | v0.4.0 | 修复文字背后出现不融合黑色背景块（全局 QWidget 背景改为 transparent，只给需要底色的容器设色）；新增「浅黑/浅白/浅蓝」三套外观主题（令牌参数化 + 运行时取色 + 顶栏与设置页切换 + 配置持久化）；三种主题像素级验证通过 |
+| 2026-10-02 | v0.4.1 | 修复「视频创作咨询」分类按钮显示英文（CATEGORIES 顺序 (label,key) 统一）；修复保存配置时主题被重置为浅黑（collect_settings 改用 dataclasses.replace，避免丢失 theme/data_repo 等字段）；新增 `scripts/png_clean.py` 清理 PNG iCCP 块以消除 libpng 警告 |

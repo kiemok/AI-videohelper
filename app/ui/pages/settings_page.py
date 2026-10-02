@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from typing import Any
 
 from PySide6.QtCore import Qt
@@ -272,22 +273,31 @@ class SettingsPage(QWidget):
             self.schedule_status.setText("状态：未启用（勾选并保存后生效）")
 
     def collect_settings(self) -> AppSettings:
-        return AppSettings(
+        """从界面收集配置。
+
+        以**当前配置为基础**做字段覆盖（``dataclasses.replace``），
+        避免遗漏字段——例如 ``theme``（外观主题）与 ``data_repo``（数据仓库）
+        都由其它入口维护，重建对象时若丢失会被重置为默认值。
+        """
+        llm = LLMSettings(
+            provider=self.provider_box.currentData() or "deepseek",
+            api_key=self.api_key_edit.text().strip(),
+            base_url=self.base_url_edit.text().strip(),
+            model=self.model_edit.text().strip(),
+            temperature=float(self.temperature_spin.value()),
+            max_tokens=int(self.max_tokens_spin.value()),
+            timeout=int(self.timeout_spin.value()),
+        )
+        return dataclasses.replace(
+            self.context.settings,
             db_url=self.db_edit.text().strip(),
             log_level=self.log_level_box.currentText(),
             http_proxy=self.proxy_edit.text().strip(),
             schedule_enabled=self.schedule_box.isChecked(),
             schedule_time=self.schedule_time_edit.text().strip() or "08:30",
-            data_repo=self.context.settings.data_repo,
-            llm=LLMSettings(
-                provider=self.provider_box.currentData() or "deepseek",
-                api_key=self.api_key_edit.text().strip(),
-                base_url=self.base_url_edit.text().strip(),
-                model=self.model_edit.text().strip(),
-                temperature=float(self.temperature_spin.value()),
-                max_tokens=int(self.max_tokens_spin.value()),
-                timeout=int(self.timeout_spin.value()),
-            ),
+            # 外观主题以 AppContext 为准（顶栏与设置页切换都会同步它），UI 值仅作兜底
+            theme=str(self.context.settings.theme or self.theme_bar.current_key() or "dark"),
+            llm=llm,
         )
 
     # ------------------------------------------------------------------ #

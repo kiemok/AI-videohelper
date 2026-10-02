@@ -12,15 +12,15 @@ from app.ai.prompts import fmt_int, fmt_pct, metrics_to_context
 
 #: 咨询分类（界面下拉/分段控件使用）
 CATEGORIES: tuple[tuple[str, str], ...] = (
-    ("general", "综合咨询"),
-    ("positioning", "账号定位"),
-    ("script", "脚本结构"),
-    ("title_cover", "标题封面"),
-    ("growth", "增长策略"),
-    ("monetization", "商业化"),
+    ("综合咨询", "general"),
+    ("账号定位", "positioning"),
+    ("脚本结构", "script"),
+    ("标题封面", "title_cover"),
+    ("增长策略", "growth"),
+    ("商业化", "monetization"),
 )
 
-CATEGORY_LABELS: dict[str, str] = dict(CATEGORIES)
+CATEGORY_LABELS: dict[str, str] = {key: label for label, key in CATEGORIES}
 
 #: 每类咨询的方法论要点（写给模型的"专家框架"，也是本地回退的骨架）
 METHODOLOGY: dict[str, tuple[str, ...]] = {
