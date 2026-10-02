@@ -1,0 +1,5 @@
+# 开发与测试依赖（运行软件本身不需要）
+#
+# 安装（国内镜像）：
+#   pip install -r requirements-dev.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+pytest>=8.0            # 单元测试框架（tests/ 下 6 组测试）
