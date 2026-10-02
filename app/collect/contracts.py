@@ -47,6 +47,8 @@ class ImportResult:
     skipped: int = 0
     platforms: dict[str, int] = field(default_factory=dict)
     csv_files: dict[str, str] = field(default_factory=dict)
+    #: 数据校验报告（``app.collect.validation.ValidationReport``）；未执行校验时为空
+    report: Any = None
 
     def summary(self) -> str:
         detail = "，".join(f"{k}:{v}" for k, v in sorted(self.platforms.items()))
@@ -56,4 +58,6 @@ class ImportResult:
         )
         if self.skipped:
             base += f"｜跳过 {self.skipped}"
+        if self.report is not None and not self.report.is_clean:
+            base += f"｜{self.report.summary()}"
         return f"{base}｜平台分布 {detail}" if detail else base

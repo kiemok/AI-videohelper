@@ -44,14 +44,43 @@ def _native(obj: Any) -> Any:
     return obj
 
 
-def refresh_sentiment(db_url: str, platform: str | None = None) -> dict[str, Any]:
-    """对尚未打分的评论做情感分析并回写，再返回聚合结果。"""
+def refresh_sentiment(
+    db_url: str,
+    platform: str | None = None,
+    engine: str = "lexicon",
+    client: Any | None = None,
+) -> dict[str, Any]:
+    """对尚未打分的评论做情感分析并回写，再返回聚合结果。
+
+    ``engine`` 取值：
+
+    - ``lexicon``（默认）：离线词典法，零依赖、可解释；
+    - ``llm``：大模型批量打标（需要可用的 ``client``），失败或漏答的条目自动回退词典法。
+
+    返回的聚合结果里带 ``engine`` / ``llm_scored`` 字段，界面据此标注实际使用的引擎。
+    """
     unscored = list_comments(db_url, platform=platform, only_unscored=True)
-    scored = S.score_comments(unscored)
+    engine_used = "lexicon"
+    llm_hits = 0
+
+    if engine == "llm" and client is not None and getattr(client, "is_available", False) and unscored:
+        scored, llm_hits, errors = S.score_comments_with_llm(unscored, client)
+        if llm_hits:
+            engine_used = "llm"
+        elif errors:
+            logger.warning("大模型打标全部失败，已整体回退词典法：%s", errors[0])
+    else:
+        scored = S.score_comments(unscored)
+
     if scored:
         update_comment_sentiment(db_url, scored)
-        logger.info("评论情感打分完成: %d 条", len(scored))
-    return S.aggregate(list_comments(db_url, platform=platform))
+        logger.info(
+            "评论情感打分完成: %d 条（引擎 %s，模型命中 %d）", len(scored), engine_used, llm_hits
+        )
+    result = S.aggregate(list_comments(db_url, platform=platform))
+    result["engine"] = engine_used
+    result["llm_scored"] = llm_hits
+    return result
 
 
 def run_daily_analysis(
@@ -61,6 +90,8 @@ def run_daily_analysis(
     scope_key: str = "all",
     window_days: int = DEFAULT_WINDOW_DAYS,
     with_sentiment: bool = True,
+    sentiment_engine: str = "lexicon",
+    llm_client: Any | None = None,
 ) -> dict[str, Any]:
     """执行一次完整分析并保存结果；数据为空时返回 ``{}``。"""
     snapshots = list_snapshots(db_url, platform=platform)
@@ -80,7 +111,11 @@ def run_daily_analysis(
     trend_by_platform = {
         key: rows[-window_days:] for key, rows in M.daily_series_by_platform(enriched).items()
     }
-    sentiment = refresh_sentiment(db_url, platform) if with_sentiment else {}
+    sentiment = (
+        refresh_sentiment(db_url, platform, engine=sentiment_engine, client=llm_client)
+        if with_sentiment
+        else {}
+    )
     comment_texts = [c.get("content", "") for c in list_comments(db_url, platform=platform)]
     keyword_source = comment_texts + [str(t) for t in window_df["title"].dropna().unique()]
 

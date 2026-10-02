@@ -12,6 +12,7 @@ from app.ai.client import LLMClient, LLMError
 from app.config import AppSettings
 from app.consulting import prompts as P
 from app.consulting.repository import add_record, create_session, list_records, list_sessions
+from app.consulting.retrieval import format_material, retrieve_material
 from app.core.logging_setup import get_logger
 from app.db.repository import latest_analysis
 
@@ -46,13 +47,20 @@ class ConsultService:
         profile: str = "",
         force_local: bool = False,
         session_id: int | None = None,
+        use_rag: bool = True,
     ) -> dict[str, Any]:
-        """生成一条咨询建议并落库，返回结果字典。"""
+        """生成一条咨询建议并落库，返回结果字典。
+
+        ``use_rag`` 为真时先从本地库检索相关作品/评论素材（BM25）注入提示词，
+        检索失败或库为空时自动跳过，不影响咨询主流程。
+        """
         question = (question or "").strip()
         if not question:
             return {"question": "", "answer": "请输入你的问题。", "highlights": [], "is_fallback": True}
 
         metrics = self.current_metrics(metrics)
+        material_docs = retrieve_material(self.db_url, question, profile) if use_rag else []
+        material_text = format_material(material_docs)
         answer = ""
         highlights: list[str] = []
         provider, model, is_fallback = "local", "rule-engine", True
@@ -62,7 +70,9 @@ class ConsultService:
             answer, highlights = P.local_advice(question, category, metrics, profile)
         else:
             try:
-                result = self.client.chat(P.build_advice_messages(question, category, metrics, profile))
+                result = self.client.chat(
+                    P.build_advice_messages(question, category, metrics, profile, material_text)
+                )
                 answer = result.content
                 provider, model, is_fallback = result.provider, result.model, False
                 highlights = _extract_highlights(answer)
@@ -96,6 +106,7 @@ class ConsultService:
             "model": model,
             "is_fallback": is_fallback,
             "error": error,
+            "materials": [doc.to_dict() for doc in material_docs],
         }
 
     # ------------------------------------------------------------------ #

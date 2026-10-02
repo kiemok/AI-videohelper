@@ -25,6 +25,7 @@ from app.config import PLATFORM_LABELS, platform_label
 from app.db.repository import list_videos
 from app.ui.context import AppContext
 from app.ui.theme import COLORS
+from app.ui.export_helper import ExportActions, ExportPayload
 from app.ui.widgets.responsive import PageScrollArea, ResponsiveKpiRow, ResponsiveSplitter
 from app.ui.widgets.toolbar import ToolbarRow
 from app.ui.widgets.cards import (
@@ -94,6 +95,9 @@ class AnalysisPage(QWidget):
         self.rank_table.setModel(self.rank_model)
         configure_table(self.rank_table, row_height=32, stretch_column=1, platform_column=0)
         self.rank_card.add_widget(self.rank_table, 1)
+        self.rank_card.add_widget(
+            ExportActions(self._export_payload, self.context.status_message.emit, with_csv=True)
+        )
         middle.addWidget(self.rank_card)
 
         right = QSplitter(Qt.Vertical)
@@ -178,6 +182,63 @@ class AnalysisPage(QWidget):
         self.refresh()
 
     # ------------------------------------------------------------------ #
+    # 导出：正文为分析摘要（Markdown），随附作品行为 CSV
+    # ------------------------------------------------------------------ #
+    def _export_payload(self) -> ExportPayload | None:
+        metrics = self._metrics or {}
+        if not metrics and not self._videos:
+            return None
+        sentiment = metrics.get("sentiment") or {}
+        engine = "大模型打标" if sentiment.get("engine") == "llm" else "离线词典法"
+        lines = [
+            "## 数据口径",
+            f"- 统计日期：{metrics.get('stat_date') or '—'}",
+            f"- 数据窗口：近 {metrics.get('window_days') or '—'} 天",
+            f"- 数据区间：{(metrics.get('data_span') or {}).get('start', '—')} ~ {(metrics.get('data_span') or {}).get('end', '—')}",
+            "",
+            "## 作品综合排行（Top 10，完整数据见随附 CSV）",
+        ]
+        for index, video in enumerate(self._videos[:10], 1):
+            views = int(video.get("view_count") or 0)
+            likes = int(video.get("like_count") or 0)
+            lines.append(
+                f"{index}. 《{video.get('title')}》（{video.get('account') or '未知账号'}）"
+                f"｜播放 {views:,}｜点赞 {likes:,}"
+            )
+        lines.extend(
+            [
+                "",
+                "## 评论情感分布",
+                f"- 样本 {int(sentiment.get('total') or 0):,} 条"
+                f"：正面 {sentiment.get('positive_ratio', 0)}%"
+                f"｜中性 {round(100 - float(sentiment.get('positive_ratio') or 0) - float(sentiment.get('negative_ratio') or 0), 2)}%"
+                f"｜负面 {sentiment.get('negative_ratio', 0)}%",
+                f"- 平均情感分 {sentiment.get('avg_score', 0)}｜分析引擎：{engine}",
+            ]
+        )
+        keywords = metrics.get("keywords") or []
+        if keywords:
+            lines.extend(
+                [
+                    "",
+                    "## 核心热词",
+                    "、".join(f"{item.get('word')}({item.get('count')})" for item in keywords[:15]),
+                ]
+            )
+        return ExportPayload(
+            title="内容与评论分析摘要",
+            stem=f"内容评论分析_{metrics.get('stat_date') or '最新'}",
+            body="\n".join(lines),
+            meta={
+                "统计日期": str(metrics.get("stat_date") or "—"),
+                "数据窗口": f"近 {metrics.get('window_days') or '—'} 天",
+                "情感引擎": engine,
+            },
+            csv_columns=[(column.key, column.label) for column in RANK_COLUMNS],
+            csv_rows=list(self._videos),
+        )
+
+    # ------------------------------------------------------------------ #
     def render(self, metrics: dict[str, Any]) -> None:
         self._metrics = metrics or {}
         self._reload()
@@ -222,7 +283,10 @@ class AnalysisPage(QWidget):
             total = int(sentiment.get("total") or 0)
             percent = (count / total * 100) if total else 0.0
             self.emotion_labels[key].setText(f"{label}：{count:,} 条（{percent:.1f}%）")
-        self.sentiment_card.set_subtitle(f"样本 {int(sentiment.get('total', 0)):,} 条")
+        self.sentiment_card.set_subtitle(
+            f"样本 {int(sentiment.get('total', 0)):,} 条｜引擎："
+            + ("大模型打标" if sentiment.get("engine") == "llm" else "离线词典法")
+        )
 
         keywords = metrics.get("keywords") or []
         self.wordcloud.set_words(keywords)

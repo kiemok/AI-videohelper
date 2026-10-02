@@ -6,7 +6,7 @@
 
 PySide6>=6.6            # 桌面端框架（含 QtCharts 图表模块）
 SQLAlchemy>=2.0         # ORM / 统一数据模型（SQLite 默认，可切 MySQL）
-PyMySQL>=1.1            # MySQL 驱动（切换到 MySQL 存储时需要）
+# PyMySQL>=1.1          # 仅当你要切换到 MySQL 存储时才需要（默认 SQLite 单文件，无需安装任何数据库服务）
 pandas>=2.0             # 数据处理与聚合分析
 numpy>=1.26             # 数值计算
 requests>=2.31          # HTTP 请求（大模型 API 调用 / 后续爬虫）

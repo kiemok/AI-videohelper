@@ -49,6 +49,11 @@ def to_int(value: Any, default: int = 0) -> int:
     try:
         if value is None or value == "":
             return default
+        if isinstance(value, str):
+            # 容错：允许 "1,234" 这类带千分位/空格的写法
+            value = value.strip().replace(",", "")
+            if not value:
+                return default
         return int(float(value))
     except (TypeError, ValueError):
         return default
@@ -58,6 +63,10 @@ def to_float(value: Any, default: float = 0.0) -> float:
     try:
         if value is None or value == "":
             return default
+        if isinstance(value, str):
+            value = value.strip().replace(",", "")
+            if not value:
+                return default
         return float(value)
     except (TypeError, ValueError):
         return default

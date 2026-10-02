@@ -13,6 +13,15 @@ from app.consulting.repository import (
     list_records,
     list_sessions,
 )
+from app.consulting.retrieval import (
+    BM25Index,
+    Doc,
+    build_index,
+    format_material,
+    get_index,
+    retrieve_material,
+    tokenize,
+)
 from app.consulting.service import ConsultService
 
 __all__ = [
@@ -20,6 +29,13 @@ __all__ = [
     "CATEGORY_LABELS",
     "category_label",
     "ConsultService",
+    "BM25Index",
+    "Doc",
+    "build_index",
+    "format_material",
+    "get_index",
+    "retrieve_material",
+    "tokenize",
     "add_record",
     "create_session",
     "delete_session",

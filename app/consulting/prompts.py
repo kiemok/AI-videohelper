@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.ai.prompts import fmt_int, fmt_pct, metrics_to_context
+from app.prompts_store import prompt_text
 
 #: 咨询分类（界面下拉/分段控件使用）
 CATEGORIES: tuple[tuple[str, str], ...] = (
@@ -56,11 +57,9 @@ METHODOLOGY: dict[str, tuple[str, ...]] = {
     ),
 }
 
-SYSTEM_PROMPT = (
-    "你是一名深耕 B站与抖音的短视频创作顾问，擅长把数据结论翻译成创作者可直接执行的行动方案。"
-    "回答要求：简体中文、结论先行、分点、每条建议都说明依据（引用提供的数据），"
-    "必要时给出示例标题或脚本片段；不要编造未提供的数据。"
-)
+def _system_prompt() -> str:
+    """系统提示词：优先取用户模板 ``prompts/consulting.system.md``。"""
+    return prompt_text("consulting.system")
 
 
 def category_label(key: str) -> str:
@@ -68,25 +67,31 @@ def category_label(key: str) -> str:
 
 
 def build_advice_messages(
-    question: str, category: str, metrics: dict[str, Any], profile: str = ""
+    question: str,
+    category: str,
+    metrics: dict[str, Any],
+    profile: str = "",
+    material: str = "",
 ) -> list[dict[str, str]]:
-    """咨询提示词：数据上下文 + 方法论 + 创作者补充信息。"""
+    """咨询提示词：数据上下文 + 检索素材（RAG）+ 方法论 + 创作者补充信息。"""
     context = metrics_to_context(metrics)
     methods = METHODOLOGY.get(category, METHODOLOGY["general"])
     method_text = "\n".join(f"- {m}" for m in methods)
     profile_text = f"\n创作者补充信息：{profile}" if profile.strip() else ""
+    material_text = f"\n{material}\n" if material.strip() else ""
     user = (
-        f"【当前数据上下文】\n{context}{profile_text}\n\n"
+        f"【当前数据上下文】\n{context}{profile_text}\n"
+        f"{material_text}\n"
         f"【本次咨询类型】{category_label(category)}\n"
         f"【专家方法论】\n{method_text}\n\n"
         f"【创作者的问题】{question}\n\n"
         "请输出：\n"
         "## 直接结论（1~2 句）\n"
-        "## 依据（引用数据，2~3 条）\n"
+        "## 依据（引用数据或上方素材，2~3 条）\n"
         "## 执行方案（3 条，含做什么/怎么做/预期指标）\n"
         "## 风险提示（1 条）"
     )
-    return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user}]
+    return [{"role": "system", "content": _system_prompt()}, {"role": "user", "content": user}]
 
 
 def local_advice(

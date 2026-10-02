@@ -189,6 +189,21 @@ def update_comment_sentiment(
     return count
 
 
+def reset_comment_sentiment(db_url: str) -> int:
+    """清空全部评论的情感打分，返回被重置的条数。
+
+    用途：用户切换情感分析引擎（词典法 ↔ 大模型）后，让下次分析用新引擎**全量重算**，
+    避免库里混着两种引擎、口径不一致的结果。
+    """
+    count = 0
+    with session_scope(db_url) as s:
+        for row in s.scalars(select(Comment).where(Comment.sentiment_label.is_not(None))):
+            row.sentiment_score = None
+            row.sentiment_label = None
+            count += 1
+    return count
+
+
 def save_analysis(
     db_url: str, stat_date: date, platform: str, scope_key: str, metrics: dict[str, Any]
 ) -> None:

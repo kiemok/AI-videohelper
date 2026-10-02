@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 from app.ui.context import AppContext
 from app.ui.theme import COLORS
 from app.ui.widgets.insight_card import InsightBriefCard
+from app.ui.export_helper import ExportActions, ExportPayload
 from app.ui.widgets.toolbar import ToolbarRow
 from app.ui.widgets.cards import Badge, ModuleCard, Pill, StatusDot, hint_label
 
@@ -33,6 +34,8 @@ class AiPage(QWidget):
     def __init__(self, context: AppContext, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.context = context
+        self._last_reports: dict[str, dict[str, Any]] = {}
+        self._last_topic_kind = ""
         self._build()
         context.settings_changed.connect(self.refresh_status)
         context.metrics_updated.connect(lambda _metrics: self.refresh_status())
@@ -90,6 +93,7 @@ class AiPage(QWidget):
         self.report_view = QTextBrowser()
         self.report_view.setPlaceholderText("点击顶部「生成数据简报」——将基于当日双平台分析结果产出结论与行动建议。")
         card.add_widget(self.report_view, 1)
+        card.add_widget(ExportActions(self._brief_payload, self.context.status_message.emit))
         return card
 
     def _build_topic_card(self) -> QWidget:
@@ -115,6 +119,7 @@ class AiPage(QWidget):
         self.topic_view = QTextBrowser()
         self.topic_view.setPlaceholderText("生成后在此显示选题矩阵 / 标题优化 / 发布时间建议。")
         card.add_widget(self.topic_view, 1)
+        card.add_widget(ExportActions(self._topic_payload, self.context.status_message.emit))
         return card
 
     def _build_footer(self) -> QWidget:
@@ -162,11 +167,13 @@ class AiPage(QWidget):
 
         def done(result: dict[str, Any]) -> None:
             self._set_busy(False, f"生成完成（{result.get('provider')}/{result.get('model')}）")
+            self._last_reports[report_type] = result
             if report_type == "daily_brief":
                 self.report_view.setMarkdown(result.get("content", ""))
                 self.brief_badge.setText("已生成")
                 self.brief_badge.set_tone("cyan" if not result.get("is_fallback") else "muted")
             else:
+                self._last_topic_kind = report_type
                 self.topic_view.setMarkdown(result.get("content", ""))
             self.refresh_status()
             self.context.report_updated.emit()
@@ -185,6 +192,56 @@ class AiPage(QWidget):
         if report_type == "title_optimize":
             return service.optimize_titles(metrics=metrics, force_local=force_local)
         return service.suggest_publish_time(metrics, force_local=force_local)
+
+    # ------------------------------------------------------------------ #
+    # 导出（复制 / 导出 Markdown，统一走 data/export）
+    # ------------------------------------------------------------------ #
+    _REPORT_LABELS = {
+        "daily_brief": "双平台数据简报",
+        "topic_suggestion": "爆款选题建议",
+        "title_optimize": "标题优化建议",
+        "publish_time": "最佳发布时机建议",
+    }
+
+    def _export_meta(self, report_type: str) -> dict[str, str]:
+        result = self._last_reports.get(report_type) or {}
+        metrics = self.context.metrics or {}
+        if result.get("is_fallback"):
+            generated = "本地规则引擎"
+        elif result.get("provider"):
+            generated = f"{result.get('provider')} / {result.get('model')}"
+        else:
+            generated = "—"
+        return {
+            "数据口径": str(metrics.get("stat_date") or "—"),
+            "数据窗口": f"近 {metrics.get('window_days') or '—'} 天",
+            "生成方式": generated,
+        }
+
+    def _brief_payload(self) -> ExportPayload | None:
+        content = self.report_view.toMarkdown().strip()
+        if not content:
+            return None
+        stat_date = str((self.context.metrics or {}).get("stat_date") or "今日")
+        return ExportPayload(
+            title=self._REPORT_LABELS["daily_brief"],
+            stem=f"数据简报_{stat_date}",
+            body=content,
+            meta=self._export_meta("daily_brief"),
+        )
+
+    def _topic_payload(self) -> ExportPayload | None:
+        content = self.topic_view.toMarkdown().strip()
+        if not content or not self._last_topic_kind:
+            return None
+        label = self._REPORT_LABELS.get(self._last_topic_kind, "AI 生成结果")
+        stat_date = str((self.context.metrics or {}).get("stat_date") or "今日")
+        return ExportPayload(
+            title=label,
+            stem=f"{label}_{stat_date}",
+            body=content,
+            meta=self._export_meta(self._last_topic_kind),
+        )
 
     # ------------------------------------------------------------------ #
     # 问答（提问与显示均由共享的 AiChatPanel 负责，见 app/ui/widgets/ai_chat.py）

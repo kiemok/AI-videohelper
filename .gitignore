@@ -1,33 +1,51 @@
-# 虚拟环境
-.venv/
-venv/
-env/
+# ============================================================
+# 注意：目录规则一律用前导 "/" 锚定到仓库根。
+# 否则像 skills/ 这种写法会匹配任意层级的同名目录，
+# 把源码模块（app/skills/）也一起忽略掉。
+# ============================================================
 
-# Python 缓存
+# 虚拟环境
+/.venv/
+/venv/
+/env/
+
+# Python 缓存与构建产物
 __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+/build/
+/dist/
 
-# 本地配置（含大模型 API Key，绝不入库）
-config/settings.json
-config/*.local.json
-.env
-
-# 数据文件（本地库 / 归档 / 导出 / 生成的样例，目录由程序自动创建）
-data/
-logs/
-
-# 自定义技能（程序会自动写入内置示例，用户可自由增删，不入库）
-skills/
-
-# IDE
-.idea/
-.vscode/
-
-# Reasonix 会话临时文件
-.reasonix/
-
-# 系统
+# 编辑器 / 系统临时文件
+*.tmp
+*.bak
+*.iml
 Thumbs.db
 desktop.ini
+.DS_Store
+
+# 本地配置
+# 新版配置保存在用户目录（Windows: %APPDATA%\DataPulseAI\settings.json），本来就不在项目里；
+# 下面几条兼容「旧位置」以及用 CCD_CONFIG_PATH 指到项目内的自定义配置。
+/config/settings.json
+/config/*.local.json
+/config/*.migrated
+.env
+
+# 运行期数据（本地库 / 归档 / 导出 / 截图，均由程序自动创建）
+/data/
+/logs/
+
+# 用户运行时维护的内容（程序首启会自动写入内置示例，不入库）
+/skills/
+/prompts/
+
+# IDE / 工具
+.idea/
+.vscode/
+.reasonix/

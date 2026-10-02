@@ -41,6 +41,13 @@ from app.collect.fusion import (
     to_int,
 )
 from app.collect.contracts import ImportResult
+from app.collect.validation import (
+    NUMERIC_FIELDS,
+    ValidationReport,
+    first_value,
+    is_number,
+    write_report,
+)
 from app.core.logging_setup import get_logger
 from app.db.base import session_scope
 from app.db.repository import (
@@ -152,30 +159,46 @@ def _date_from_name(path: Path) -> date | None:
 # --------------------------------------------------------------------------- #
 # 读取
 # --------------------------------------------------------------------------- #
-def read_rows(path: Path) -> list[dict[str, Any]]:
-    """读取 CSV / JSON / JSONL，统一返回 dict 列表。"""
+def read_rows_checked(path: Path) -> tuple[list[dict[str, Any]], str]:
+    """读取 CSV / JSON / JSONL；返回 ``(行列表, 错误信息)``，错误信息为空表示读取成功。"""
     suffix = path.suffix.lower()
     try:
         if suffix == ".csv":
             with path.open("r", encoding="utf-8-sig", newline="") as fh:
-                return [dict(row) for row in csv.DictReader(fh)]
+                return [dict(row) for row in csv.DictReader(fh)], ""
         text = path.read_text(encoding="utf-8-sig")
         if suffix in {".jsonl", ".ndjson"}:
-            return [json.loads(line) for line in text.splitlines() if line.strip()]
+            rows: list[dict[str, Any]] = []
+            for number, line in enumerate(text.splitlines(), 1):
+                if not line.strip():
+                    continue
+                try:
+                    item = json.loads(line)
+                except ValueError as exc:
+                    return rows, f"第 {number} 行不是合法 JSON：{exc}"
+                if isinstance(item, dict):
+                    rows.append(item)
+            return rows, ""
         payload = json.loads(text or "[]")
     except (OSError, ValueError, csv.Error) as exc:
         logger.warning("读取数据文件失败 %s: %s", path.name, exc)
-        return []
+        return [], f"无法解析：{exc}"
 
     if isinstance(payload, list):
-        return [row for row in payload if isinstance(row, dict)]
+        return [row for row in payload if isinstance(row, dict)], ""
     if isinstance(payload, dict):
         for key in ("data", "items", "list", "records", "rows"):
             value = payload.get(key)
             if isinstance(value, list):
-                return [row for row in value if isinstance(row, dict)]
-        return [payload]
-    return []
+                return [row for row in value if isinstance(row, dict)], ""
+        return [payload], ""
+    return [], "顶层结构既不是数组也不是对象"
+
+
+def read_rows(path: Path) -> list[dict[str, Any]]:
+    """读取 CSV / JSON / JSONL，统一返回 dict 列表（忽略错误，兼容旧调用）。"""
+    rows, _error = read_rows_checked(path)
+    return rows
 
 
 # --------------------------------------------------------------------------- #
@@ -212,16 +235,47 @@ def _first(row: dict[str, Any], *names: str, default: Any = "") -> Any:
 # 导入
 # --------------------------------------------------------------------------- #
 def import_repository(db_url: str, scan: RepoScan, source: str = "数据仓库") -> ImportResult:
-    """把扫描到的仓库数据导入统一数据模型（幂等，可重复执行）。"""
+    """把扫描到的仓库数据导入统一数据模型（幂等，可重复执行）。
+
+    过程中做三层数据校验（文件 / 行 / 关系），问题写入 ``result.report``
+    并在 ``data/export/`` 落一份 Markdown 报告，便于排查自己维护的数据。
+    """
     result = ImportResult(source=source)
+    report = ValidationReport(source=source)
+    result.report = report
     account_ids: dict[tuple[str, str], int] = {}
     video_ids: dict[tuple[str, str], int] = {}
     skipped_snapshots = 0
 
+    # 文件层：统计 + 未识别文件
+    for kind, paths in scan.files.items():
+        report.files[kind] = len(paths)
+    if scan.skipped:
+        report.unrecognized_files = [path.name for path in scan.skipped]
+        report.warn(
+            "文件",
+            f"{len(scan.skipped)} 个文件",
+            "命名未匹配到账号/作品/快照/评论任何类别，已跳过",
+            "按 DATA_FORMAT.md 的约定命名，或放进 accounts / videos / snapshots / comments 目录",
+        )
+    if not scan.total():
+        report.error("文件", str(scan.root), "没有找到可识别的数据文件", "先往仓库里放入 CSV / JSON 数据文件")
+
+    def rows_of(path: Path, table: str) -> list[dict[str, Any]]:
+        """读取一个文件并记录读取层问题。"""
+        rows, error = read_rows_checked(path)
+        if error:
+            report.error(table, path.name, error, "确认文件为 UTF-8 编码且格式正确")
+        if not rows:
+            report.warn(table, path.name, "文件中没有数据行", "确认导出包含表头与至少一行数据")
+        return rows
+
     with session_scope(db_url) as session:
         # 1) 账号
         for path in scan.files.get("accounts", []):
-            for row in read_rows(path):
+            for number, row in enumerate(rows_of(path, "账号"), 1):
+                report.bump("账号", "读取")
+                location = f"{path.name}:{number}"
                 platform = _detect_platform(row, path)
                 payload = (
                     normalize_account(platform, row)
@@ -230,21 +284,45 @@ def import_repository(db_url: str, scan: RepoScan, source: str = "数据仓库")
                 )
                 pid = str(payload.get("platform_account_id") or "")
                 if not pid:
+                    report.error("账号", location, "缺少账号 ID", "补 mid / uid 或 platform_account_id 字段")
+                    report.bump("账号", "跳过")
                     continue
+                if not str(payload.get("nickname") or "").strip():
+                    report.warn("账号", location, f"账号 {pid} 昵称为空", "昵称用于聚合展示，建议补齐")
                 account_ids[(platform, pid)] = upsert_account(db_url, payload, session=session)
                 result.accounts += 1
+                report.bump("账号", "导入")
                 _bump(result, platform)
 
         # 2) 作品（可能内嵌快照）
         embedded_snapshots: list[tuple[str, str, list[dict[str, Any]]]] = []
         for path in scan.files.get("videos", []):
-            for row in read_rows(path):
+            for number, row in enumerate(rows_of(path, "作品"), 1):
+                report.bump("作品", "读取")
+                location = f"{path.name}:{number}"
                 platform = _detect_platform(row, path)
                 payload = (
                     normalize_video(platform, row)
                     if _is_raw(row, _RAW_VIDEO_KEYS)
                     else _video_from_unified(row, platform)
                 )
+                pvid = str(payload.get("platform_video_id") or "")
+                if not pvid:
+                    report.error(
+                        "作品", location, "缺少作品 ID", "补 bvid / aweme_id 或 platform_video_id 字段"
+                    )
+                    report.bump("作品", "跳过")
+                    continue
+                if not str(payload.get("title") or "").strip():
+                    report.warn("作品", location, f"作品 {pvid} 标题为空", "标题参与热词与分析展示，建议补齐")
+                for key, label in NUMERIC_FIELDS.get("作品", ()):
+                    value = first_value(row, key)
+                    if str(value).strip() and not is_number(value):
+                        report.warn(
+                            "作品", location, f"{label}（{key}）不是数字：{value!r}",
+                            "该行仍会导入，但该指标按 0 处理",
+                        )
+
                 account_pid = str(payload.pop("account_platform_id", "") or "")
                 if account_pid and (platform, account_pid) not in account_ids:
                     author = row.get("owner") or row.get("author")
@@ -253,12 +331,18 @@ def import_repository(db_url: str, scan: RepoScan, source: str = "数据仓库")
                             db_url, normalize_account(platform, author), session=session
                         )
                         result.accounts += 1
+                if account_pid and account_ids.get((platform, account_pid)) is None:
+                    report.warn(
+                        "作品", location, f"作品 {pvid} 未匹配到账号（{account_pid}）",
+                        "先导入 accounts 数据，或在作品里带上 owner / author 字段",
+                    )
+                payload["platform_video_id"] = pvid
                 payload["account_id"] = account_ids.get((platform, account_pid))
 
                 video_db_id = upsert_video(db_url, payload, session=session)
-                pvid = payload["platform_video_id"]
                 video_ids[(platform, pvid)] = video_db_id
                 result.videos += 1
+                report.bump("作品", "导入")
                 _bump(result, platform)
 
                 nested = row.get("snapshots") or row.get("stats") or row.get("metrics")
@@ -266,13 +350,32 @@ def import_repository(db_url: str, scan: RepoScan, source: str = "数据仓库")
                     embedded_snapshots.append((platform, pvid, nested))
 
         # 3) 内嵌快照
-        for platform, pvid, rows in embedded_snapshots:
+        for platform, pvid, embedded in embedded_snapshots:
             video_db_id = video_ids.get((platform, pvid))
             if not video_db_id:
+                report.error(
+                    "快照", f"作品 {pvid}", "内嵌快照找不到对应作品",
+                    "确认该作品能正常导入（作品 ID 是否缺失）",
+                )
                 continue
-            for row in rows:
+            for row in embedded:
+                report.bump("快照", "读取")
                 if not isinstance(row, dict):
+                    report.warn("快照", f"作品 {pvid}", "快照条目不是对象（dict）", "检查 JSON 结构")
+                    report.bump("快照", "跳过")
                     continue
+                if not str(first_value(row, "stat_date", "date", "captured_at")).strip():
+                    report.warn(
+                        "快照", f"作品 {pvid}", "内嵌快照缺少 stat_date",
+                        "补 stat_date 字段，或用 snapshots/YYYY-MM-DD.csv 组织快照",
+                    )
+                for key, label in NUMERIC_FIELDS.get("快照", ()):
+                    value = first_value(row, key)
+                    if str(value).strip() and not is_number(value):
+                        report.warn(
+                            "快照", f"作品 {pvid}", f"{label}（{key}）不是数字：{value!r}",
+                            "该行仍会导入，但该指标按 0 处理",
+                        )
                 snapshot = (
                     normalize_snapshot(platform, row)
                     if _is_raw(row, {"stat", "statistics"})
@@ -280,21 +383,48 @@ def import_repository(db_url: str, scan: RepoScan, source: str = "数据仓库")
                 )
                 upsert_snapshot(db_url, video_db_id, snapshot, session=session)
                 result.snapshots += 1
+                report.bump("快照", "导入")
 
         # 4) 独立快照文件
         for path in scan.files.get("snapshots", []):
             fallback_date = _date_from_name(path)
-            for row in read_rows(path):
+            for number, row in enumerate(rows_of(path, "快照"), 1):
+                report.bump("快照", "读取")
+                location = f"{path.name}:{number}"
                 platform = _detect_platform(row, path)
                 pvid = str(
                     _first(row, "platform_video_id", "bvid", "aweme_id", "video_id", default="")
                 )
+                if not pvid:
+                    report.error("快照", location, "缺少作品 ID，无法关联作品", "补 platform_video_id / bvid / aweme_id")
+                    report.bump("快照", "跳过")
+                    skipped_snapshots += 1
+                    continue
                 video_db_id = video_ids.get((platform, pvid)) or get_video_id(
                     db_url, platform, pvid, session=session
                 )
                 if not video_db_id:
                     skipped_snapshots += 1
+                    report.error(
+                        "快照", location, f"作品 {pvid} 不在库中（也不在同批作品数据里）",
+                        "先导入该作品，或把作品与快照放在同一次导入中",
+                    )
+                    report.bump("快照", "跳过")
                     continue
+                if not fallback_date and not str(
+                    first_value(row, "stat_date", "date", "captured_at")
+                ).strip():
+                    report.warn(
+                        "快照", location, "没有统计日期",
+                        "补 stat_date 字段，或用 snapshots/YYYY-MM-DD.csv 组织快照",
+                    )
+                for key, label in NUMERIC_FIELDS.get("快照", ()):
+                    value = first_value(row, key)
+                    if str(value).strip() and not is_number(value):
+                        report.warn(
+                            "快照", location, f"{label}（{key}）不是数字：{value!r}",
+                            "该行仍会导入，但该指标按 0 处理",
+                        )
                 snapshot = (
                     normalize_snapshot(platform, row, fallback_date)
                     if _is_raw(row, {"stat", "statistics"})
@@ -302,11 +432,14 @@ def import_repository(db_url: str, scan: RepoScan, source: str = "数据仓库")
                 )
                 upsert_snapshot(db_url, video_db_id, snapshot, session=session)
                 result.snapshots += 1
+                report.bump("快照", "导入")
 
         # 5) 评论
         for path in scan.files.get("comments", []):
             fallback_time = _date_from_name(path)
-            for row in read_rows(path):
+            for number, row in enumerate(rows_of(path, "评论"), 1):
+                report.bump("评论", "读取")
+                location = f"{path.name}:{number}"
                 platform = _detect_platform(row, path)
                 payload = (
                     normalize_comment(platform, row)
@@ -315,7 +448,11 @@ def import_repository(db_url: str, scan: RepoScan, source: str = "数据仓库")
                 )
                 cid = str(payload.get("platform_comment_id") or "")
                 if not cid:
+                    report.error("评论", location, "缺少评论 ID", "补 rpid / cid 或 platform_comment_id")
+                    report.bump("评论", "跳过")
                     continue
+                if not str(payload.get("content") or "").strip():
+                    report.warn("评论", location, f"评论 {cid} 内容为空", "空评论不参与情感分析与热词统计")
                 pvid = str(
                     _first(row, "platform_video_id", "bvid", "aweme_id", "video_id", default="")
                 )
@@ -323,12 +460,23 @@ def import_repository(db_url: str, scan: RepoScan, source: str = "数据仓库")
                     payload["video_id"] = video_ids.get((platform, pvid)) or get_video_id(
                         db_url, platform, pvid, session=session
                     )
+                    if not payload.get("video_id"):
+                        report.warn(
+                            "评论", location, f"评论 {cid} 关联的作品 {pvid} 不在库中",
+                            "先导入作品数据；评论仍会入库，但不会挂到作品上",
+                        )
+                else:
+                    report.warn("评论", location, f"评论 {cid} 未标注所属作品", "补 platform_video_id 字段")
                 upsert_comment(db_url, payload, session=session)
                 result.comments += 1
+                report.bump("评论", "导入")
 
     if skipped_snapshots:
         logger.warning("有 %d 条快照因缺少对应作品被跳过", skipped_snapshots)
         result.skipped = skipped_snapshots
+    if not result.accounts and not result.videos:
+        report.error("导入", str(scan.root), "本次没有导入任何账号或作品", "检查文件命名、必填字段与平台列")
+    write_report(report)
     logger.info("数据仓库导入完成：%s", result.summary())
     return result
 

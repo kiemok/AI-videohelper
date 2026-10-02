@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from PySide6.QtCore import QRectF, QSize, Qt, QTimer
-from PySide6.QtGui import QAction, QColor, QFont, QPainter, QPen
+from PySide6.QtCore import QRectF, QSize, Qt, QTimer, QUrl
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QFont, QPainter, QPen
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -30,7 +30,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from pathlib import Path
+
 from app import __app_name__, __version__
+from app.config import LOG_DIR
 from app.ui.context import AppContext
 from app.ui.pages import (
     AiPage,
@@ -293,6 +296,11 @@ class MainWindow(QMainWindow):
         self._on_metrics_updated(context.load_latest_metrics())
         self.refresh_status()
         self._sync_minimum_width()
+        if context.config_migrated_to is not None:
+            self._show_status(
+                f"API Key 等配置已迁移到用户目录：{context.config_migrated_to}"
+                "（原 config/settings.json 已移出项目，备份在用户目录）"
+            )
         if not context.metrics:
             self._show_status("欢迎使用：请先点击顶部「立即同步数据」，再执行分析。")
 
@@ -486,6 +494,31 @@ class MainWindow(QMainWindow):
             widget.setObjectName("MutedText")
             bar.addPermanentWidget(widget)
 
+    # ------------------------------------------------------------------ #
+    # 日志与错误（统一入口）
+    # ------------------------------------------------------------------ #
+    def _open_path(self, path: Path) -> None:
+        """用系统默认程序打开日志文件或目录。"""
+        target = Path(path)
+        if not target.exists():
+            QMessageBox.information(self, "文件不存在", f"尚未生成：{target}")
+            return
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(target))):
+            QMessageBox.warning(self, "打开失败", f"无法打开：{target}")
+
+    def _show_last_error(self) -> None:
+        """展示最近一次任务错误的详情（含日志文件位置）。"""
+        QMessageBox.warning(self, "最近错误", self.context.last_error_text())
+
+    def _show_log_tail(self) -> None:
+        """在对话框里内联展示日志尾部，便于不离开软件就排查。"""
+        box = QMessageBox(self)
+        box.setWindowTitle("日志尾部（app.log）")
+        box.setIcon(QMessageBox.Information)
+        box.setText("最近 120 行日志（点「Show Details」展开）：")
+        box.setDetailedText(self.context.tail_log())
+        box.exec()
+
     def _build_menu(self) -> None:
         data_menu = self.menuBar().addMenu("数据(&D)")
         for label, handler in (
@@ -510,6 +543,18 @@ class MainWindow(QMainWindow):
             action = QAction(label, self)
             action.triggered.connect(handler)
             run_menu.addAction(action)
+
+        log_menu = self.menuBar().addMenu("日志(&L)")
+        for label, handler in (
+            ("打开日志文件（app.log）", lambda: self._open_path(LOG_DIR / "app.log")),
+            ("打开告警日志（alerts.log）", lambda: self._open_path(LOG_DIR / "alerts.log")),
+            ("打开日志目录", lambda: self._open_path(LOG_DIR)),
+            ("查看最近错误", self._show_last_error),
+            ("内联查看日志尾部", self._show_log_tail),
+        ):
+            action = QAction(label, self)
+            action.triggered.connect(handler)
+            log_menu.addAction(action)
 
         help_menu = self.menuBar().addMenu("帮助(&H)")
         about = QAction("关于", self)

@@ -23,8 +23,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from app.consulting import CATEGORIES
+from app.consulting import CATEGORIES, CATEGORY_LABELS
 from app.ui.context import AppContext
+from app.ui.export_helper import ExportActions, ExportPayload
 from app.ui.widgets.responsive import PageScrollArea, ResponsiveSplitter
 from app.ui.widgets.toolbar import ToolbarRow
 from app.ui.widgets.cards import (
@@ -50,6 +51,7 @@ class ConsultingPage(QWidget):
     def __init__(self, context: AppContext, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.context = context
+        self._last_result: dict[str, Any] = {}
         self._build()
         context.settings_changed.connect(self.refresh_status)
         context.metrics_updated.connect(lambda _m: self.refresh_status())
@@ -150,20 +152,32 @@ class ConsultingPage(QWidget):
         self.output_view.setPlaceholderText("生成后在此显示：直接结论 / 依据 / 执行方案 / 风险提示")
         card.add_widget(self.output_view, 1)
 
+        self.material_label = muted_label("RAG 参考素材：暂无（生成建议时自动检索本地作品与评论）")
+        self.material_label.setWordWrap(False)
+        card.add_widget(self.material_label)
+        self.material_list = QListWidget()
+        self.material_list.setObjectName("LogList")
+        self.material_list.setWordWrap(True)
+        self.material_list.setMaximumHeight(132)
+        card.add_widget(self.material_list)
+
         self.highlights_row = QWidget()
         self.highlights_layout = QHBoxLayout(self.highlights_row)
         self.highlights_layout.setContentsMargins(0, 0, 0, 0)
         self.highlights_layout.setSpacing(6)
         self.highlights_layout.addStretch(1)
         card.add_widget(self.highlights_row)
+        card.add_widget(ExportActions(self._export_payload, self.context.status_message.emit))
         return card
 
     # ------------------------------------------------------------------ #
     def refresh_status(self) -> None:
         service = self.context.consulting
         has_data = bool(self.context.metrics)
+        rag = "RAG 检索已启用" if self.context.settings.consulting_rag_enabled else "RAG 检索已关闭"
         self.status_label.setText(
-            f"数据上下文：{'已就绪' if has_data else '暂无（请先执行分析）'}｜{service.status_text()}"
+            f"数据上下文：{'已就绪' if has_data else '暂无（请先执行分析）'}"
+            f"｜{service.status_text()}｜{rag}"
         )
         self.refresh()
 
@@ -209,20 +223,59 @@ class ConsultingPage(QWidget):
             self.context.metrics,
             self.profile_edit.text(),
             self.force_local_box.isChecked(),
+            use_rag=self.context.settings.consulting_rag_enabled,
         )
 
     def _on_done(self, result: dict[str, Any]) -> None:
         self._set_busy(False)
+        self._last_result = result
         source = "本地规则引擎" if result.get("is_fallback") else f"{result.get('provider')}/{result.get('model')}"
         self.context.set_busy(False, f"咨询建议已生成（{source}）")
         self.output_view.setMarkdown(result.get("answer", ""))
         self._render_highlights(result.get("highlights") or [])
+        self._render_materials(result.get("materials") or [])
         self.refresh()
 
     def _on_error(self, error: str) -> None:
         self._set_busy(False)
         self.context.set_busy(False, f"咨询生成失败：{error}")
         self.output_view.setPlainText(f"生成失败：{error}")
+
+    # ------------------------------------------------------------------ #
+    # 导出：咨询建议（含问题、类型、RAG 素材与生成方式）
+    # ------------------------------------------------------------------ #
+    def _export_payload(self) -> ExportPayload | None:
+        answer = self.output_view.toMarkdown().strip()
+        if not answer or not self._last_result:
+            return None
+        result = self._last_result
+        category = str(result.get("category") or self.category_bar.current_key() or "general")
+        label = CATEGORY_LABELS.get(category, category)
+        materials = result.get("materials") or []
+        parts = [
+            f"## 咨询问题\n{result.get('question') or ''}",
+            f"## 咨询类型\n{label}",
+            f"## 建议正文\n{answer}",
+        ]
+        if materials:
+            parts.append(
+                "## RAG 检索素材（BM25）\n"
+                + "\n".join(
+                    f"{index}. [{item.get('kind')}] {item.get('text')}（BM25 {item.get('score')}）"
+                    for index, item in enumerate(materials, 1)
+                )
+            )
+        provider = (
+            "本地规则引擎"
+            if result.get("is_fallback")
+            else f"{result.get('provider')} / {result.get('model')}"
+        )
+        return ExportPayload(
+            title="视频创作咨询建议",
+            stem=f"创作咨询_{label}",
+            body="\n\n".join(parts),
+            meta={"咨询类型": label, "生成方式": provider, "检索素材": f"{len(materials)} 条"},
+        )
 
     def _render_highlights(self, highlights: list[str]) -> None:
         while self.highlights_layout.count() > 1:
@@ -233,6 +286,24 @@ class ConsultingPage(QWidget):
         for index, text in enumerate(highlights[:6]):
             self.highlights_layout.insertWidget(index, chip(text, "cyan" if index % 2 else "violet"))
 
+    def _render_materials(self, materials: list[dict[str, Any]]) -> None:
+        """展示本次 RAG 检索命中的素材（BM25 得分 + 原文摘要）。"""
+        self.material_list.clear()
+        if not materials:
+            self.material_label.setText(
+                "RAG 参考素材：本次未命中"
+                + ("（已在设置中关闭检索增强）" if not self.context.settings.consulting_rag_enabled else "")
+            )
+            return
+        self.material_label.setText(
+            f"RAG 参考素材：命中 {len(materials)} 条（BM25 检索本地数据仓库，已注入提示词）"
+        )
+        for material in materials:
+            kind = material.get("kind", "素材")
+            text = str(material.get("text") or "")[:120]
+            score = material.get("score")
+            self.material_list.addItem(QListWidgetItem(f"[{kind}] {text}（BM25 {score}）"))
+
     def _on_history_clicked(self, item: QListWidgetItem) -> None:
         record = item.data(Qt.UserRole)
         if not isinstance(record, dict):
@@ -240,3 +311,4 @@ class ConsultingPage(QWidget):
         self.question_edit.setPlainText(record.get("question", ""))
         self.output_view.setMarkdown(record.get("answer", ""))
         self._render_highlights(record.get("highlights") or [])
+        self._render_materials([])

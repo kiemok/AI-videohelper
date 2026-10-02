@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import dataclasses
-from datetime import date
+from datetime import date, datetime
+from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import QObject, Signal
@@ -11,7 +12,7 @@ from PySide6.QtCore import QObject, Signal
 from app.ai import InsightService
 from app.analysis import analysis_date_options, run_daily_analysis
 from app.collect import archive_snapshots_csv, import_csv_dir, sync_sample_data
-from app.config import AppSettings, ensure_dirs, load_settings, save_settings
+from app.config import LOG_DIR, AppSettings, ensure_dirs, load_settings, migrate_legacy_config, save_settings
 from app.consulting import ConsultService
 from app.core.logging_setup import get_logger, setup_logging
 from app.core.scheduler import DailyScheduler
@@ -38,7 +39,11 @@ class AppContext(QObject):
     def __init__(self) -> None:
         super().__init__()
         ensure_dirs()
+        # 首次运行把旧版「项目内配置」迁移到用户目录（幂等；显式 CCD_CONFIG_PATH 时不迁移）
+        self.config_migrated_to = migrate_legacy_config()
         self.settings: AppSettings = load_settings()
+        if self.config_migrated_to is not None:
+            logger.info("配置已迁移到用户目录：%s", self.config_migrated_to)
         setup_logging(self.settings.log_level)
         self.db_url: str = self.settings.resolved_db_url()
         init_db(self.db_url)
@@ -49,6 +54,8 @@ class AppContext(QObject):
         self.chat_history: list[dict[str, str]] = []
         self.chat_session_id: int | None = None
         self._toolbox_cache: Any | None = None  # MCP 工具集合缓存（配置变化时失效）
+        self.last_import_report: dict[str, Any] = {}  # 最近一次导入的校验报告（数据页展示）
+        self.last_error: dict[str, Any] = {}  # 最近一次任务错误（「日志 → 查看最近错误」）
         self.scheduler = DailyScheduler(self)
         self.scheduler.due.connect(self._on_schedule_due)
         if self.settings.schedule_enabled:
@@ -217,6 +224,9 @@ class AppContext(QObject):
         """保存配置；数据库地址变化时重建连接，外观主题变化时立即生效。"""
         db_changed = settings.resolved_db_url() != self.db_url
         theme_changed = settings.theme != self.settings.theme
+        engine_changed = (settings.sentiment_engine or "lexicon") != (
+            self.settings.sentiment_engine or "lexicon"
+        )
         self.settings = settings
         save_settings(settings)
         if db_changed:
@@ -228,7 +238,24 @@ class AppContext(QObject):
         self._sync_scheduler()
         if theme_changed:
             self.apply_theme(settings.theme, persist=False)
+        if engine_changed:
+            self._reset_sentiment_for_engine(settings.sentiment_engine or "lexicon")
         self.settings_changed.emit()
+
+    def _reset_sentiment_for_engine(self, engine: str) -> None:
+        """切换情感分析引擎后清空历史打分，让下次分析用新引擎全量重算。"""
+        from app.db.repository import reset_comment_sentiment
+
+        try:
+            count = reset_comment_sentiment(self.db_url)
+        except Exception as exc:  # noqa: BLE001 - 重置失败不应阻断保存配置
+            logger.warning("重置评论情感打分失败：%s", exc)
+            return
+        if count:
+            label = "大模型打标" if engine == "llm" else "离线词典法"
+            self.status_message.emit(
+                f"情感分析引擎已切换为「{label}」：{count} 条历史打分已清空，下次分析将重新打分"
+            )
 
     def save_preference(self, **changes: Any) -> None:
         """保存轻量界面偏好（如看板 TOP 区域高度占比）：只更新字段并写盘。
@@ -344,6 +371,8 @@ class AppContext(QObject):
             self.db_url,
             stat_date=stat_date,
             platform=platform,
+            sentiment_engine=self.settings.sentiment_engine,
+            llm_client=self.insights.client,
         )
 
     def load_latest_metrics(self) -> dict[str, Any]:
@@ -526,10 +555,12 @@ class AppContext(QObject):
             raise RuntimeError("仓库内未发现可识别的数据文件（支持 CSV / JSON / JSONL）")
 
         imported = import_repository(self.db_url, scan, source=f"数据仓库·{result.action}")
+        self.last_import_report = imported.report.to_dict() if imported.report else {}
         create_repo_sync_log(self.db_url, result.action, imported.summary(), result.file_count)
         return f"{result.message}，{scan.describe()}；{imported.summary()}"
 
     def _after_repo_sync(self, message: str) -> None:
+        # message 里已包含 imported.summary()（其中带数据校验结论），无需重复拼接
         self.set_busy(False, f"数据仓库已更新：{message}")
         self.data_changed.emit()
 
@@ -550,6 +581,7 @@ class AppContext(QObject):
             if scan.total() == 0:
                 raise RuntimeError(f"目录中没有可识别的数据文件：{repo.resolved_local_dir()}")
             imported = import_repository(self.db_url, scan, source="本地仓库目录")
+            self.last_import_report = imported.report.to_dict() if imported.report else {}
             return f"{scan.describe()}；{imported.summary()}"
 
         self.runner.submit(job, self._after_repo_sync, lambda e: self._on_error(e, "导入失败"))
@@ -610,5 +642,35 @@ class AppContext(QObject):
 
     # ------------------------------------------------------------------ #
     def _on_error(self, error: str, title: str) -> None:
+        """统一的任务错误处理：写日志 + 状态栏提示 + 保留详情供「查看最近错误」。"""
         logger.error("%s: %s", title, error)
-        self.set_busy(False, f"{title}：{error}")
+        self.last_error = {
+            "title": title,
+            "message": str(error),
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        self.set_busy(False, f"{title}：{error}｜详情见「日志 → 查看最近错误」")
+
+    def last_error_text(self) -> str:
+        """最近一次错误的可读详情（供弹窗展示，含日志文件位置）。"""
+        if not self.last_error:
+            return "当前没有错误记录。"
+        logs = Path(LOG_DIR)
+        return (
+            f"时间：{self.last_error.get('time')}\n"
+            f"操作：{self.last_error.get('title')}\n"
+            f"错误：{self.last_error.get('message')}\n\n"
+            f"完整日志：{logs / 'app.log'}\n"
+            f"告警日志（仅 ERROR 及以上）：{logs / 'alerts.log'}"
+        )
+
+    def tail_log(self, lines: int = 120, name: str = "app.log") -> str:
+        """读取日志尾部若干行（供「查看日志」弹窗内联展示）。"""
+        path = Path(LOG_DIR) / name
+        if not path.is_file():
+            return f"日志文件尚未生成：{path}"
+        try:
+            content = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError as exc:
+            return f"读取日志失败：{exc}"
+        return "\n".join(content[-lines:]) or "（日志为空）"

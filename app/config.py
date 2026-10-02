@@ -1,8 +1,11 @@
 """全局配置管理。
 
 设计要点：
-- 配置以 JSON 文件形式保存在**用户本地**（默认 ``<项目根>/config/settings.json``），
-  大模型 API Key 只写入该文件，不进入版本库（见 .gitignore）。
+- 配置以 JSON 文件形式保存在**用户目录**（Windows 为 ``%APPDATA%\\DataPulseAI\\settings.json``，
+  其它系统为 ``~/.config/DataPulseAI/settings.json``）。放在项目目录**之外**，
+  是为了让「拷贝 / 打包 / 分发源码」时不会带走大模型 API Key。
+- 旧版本位于 ``<项目根>/config/settings.json`` 的配置会在首次运行时自动迁移过去（见
+  :func:`migrate_legacy_config`），旧文件会被**移出项目目录**，避免它仍含 Key 被一起打包。
 - 可用环境变量 ``CCD_CONFIG_PATH`` 覆盖配置文件位置。
 - 读取时对缺失/多余字段做容错，便于后续版本平滑新增配置项。
 """
@@ -11,16 +14,30 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config" / "settings.json"
 DATA_DIR = PROJECT_ROOT / "data"
 SAMPLE_DIR = DATA_DIR / "samples"
 ARCHIVE_DIR = DATA_DIR / "archive"
 LOG_DIR = PROJECT_ROOT / "logs"
+
+#: 旧版本的配置位置（项目目录内）；首次运行时会自动迁移到用户目录
+LEGACY_CONFIG_PATH = PROJECT_ROOT / "config" / "settings.json"
+
+
+def user_config_dir() -> Path:
+    """用户级配置目录：Windows 取 ``%APPDATA%\\DataPulseAI``，其它系统取 ``~/.config/DataPulseAI``。"""
+    appdata = os.environ.get("APPDATA", "").strip()
+    if appdata:
+        return Path(appdata) / "DataPulseAI"
+    return Path.home() / ".config" / "DataPulseAI"
+
+
+DEFAULT_CONFIG_PATH = user_config_dir() / "settings.json"
 
 # 大模型服务商预设（均为 OpenAI 兼容协议）
 PROVIDER_PRESETS: dict[str, dict[str, str]] = {
@@ -164,6 +181,10 @@ class AppSettings:
     mcp_servers: list[McpServerSettings] = field(default_factory=list)  # MCP 服务器列表
     #: 数据看板「作品表现 TOP」区域高度占比（0.2~0.8）；上下拖动分隔条调整后自动保存
     dashboard_top_ratio: float = 0.45
+    #: 评论情感分析引擎：lexicon（离线词典法，默认）/ llm（大模型批量打标）
+    sentiment_engine: str = "lexicon"
+    #: 视频创作咨询是否启用 RAG 检索（从本地库检索相关作品/评论素材注入提示词）
+    consulting_rag_enabled: bool = True
 
     def resolved_db_url(self) -> str:
         if self.db_url.strip():
@@ -185,6 +206,30 @@ def default_sqlite_url() -> str:
 def config_path() -> Path:
     override = os.environ.get("CCD_CONFIG_PATH", "").strip()
     return Path(override) if override else DEFAULT_CONFIG_PATH
+
+
+def migrate_legacy_config() -> Path | None:
+    """把旧版「项目内 config/settings.json」迁移到用户目录（幂等）。
+
+    仅当**新位置尚无配置**且旧文件存在时执行一次：复制到用户目录，并把旧文件**移到用户目录**
+    改名 ``settings.legacy-backup.json`` —— 项目目录里不再保留任何含 Key 的文件（否则拷贝源码时
+    仍会把它带走），同时内容得以备份。显式设置 ``CCD_CONFIG_PATH`` 时不做任何迁移
+    （测试 / 多环境隔离依赖这一点）。
+
+    返回迁移后的新配置路径；未发生迁移时返回 ``None``。
+    """
+    if os.environ.get("CCD_CONFIG_PATH", "").strip():
+        return None
+    if DEFAULT_CONFIG_PATH.exists() or not LEGACY_CONFIG_PATH.is_file():
+        return None
+    try:
+        DEFAULT_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(LEGACY_CONFIG_PATH, DEFAULT_CONFIG_PATH)
+        backup = DEFAULT_CONFIG_PATH.with_name("settings.legacy-backup.json")
+        LEGACY_CONFIG_PATH.replace(backup)
+    except OSError:
+        return None
+    return DEFAULT_CONFIG_PATH
 
 
 def _build_dataclass(cls: type, data: dict[str, Any]) -> Any:
@@ -211,7 +256,13 @@ def _build_dataclass(cls: type, data: dict[str, Any]) -> Any:
 
 
 def load_settings(path: Path | None = None) -> AppSettings:
-    """读取配置；文件不存在或损坏时回退到默认配置。"""
+    """读取配置；文件不存在或损坏时回退到默认配置。
+
+    未显式指定 ``path`` 时，会先尝试把旧版「项目内 config/settings.json」迁移到用户目录
+    （幂等，见 :func:`migrate_legacy_config`）。
+    """
+    if path is None:
+        migrate_legacy_config()
     path = path or config_path()
     if not path.exists():
         return AppSettings()

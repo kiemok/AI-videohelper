@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.prompts_store import prompt_text
+
 GENRES: tuple[str, ...] = (
     "都市逆袭",
     "悬疑反转",
@@ -23,10 +25,9 @@ SHOT_TYPES: tuple[str, ...] = ("远景", "全景", "中景", "近景", "特写",
 #: 单个镜头的时长（秒）；竖屏短剧普遍 2~4 秒一个镜头
 DEFAULT_SHOT_SECONDS = (2, 3, 4)
 
-SYSTEM_PROMPT = (
-    "你是一名擅长抖音/B站竖屏短剧的编剧与分镜师，熟悉 3 秒钩子、强冲突、快节奏反转与结尾悬念的写法。"
-    "输出使用简体中文，结构化、可直接拍摄执行；台词口语化，避免书面语。"
-)
+def _system_prompt() -> str:
+    """系统提示词：优先取用户模板 ``prompts/drama.system.md``。"""
+    return prompt_text("drama.system")
 
 
 def build_outline_messages(project: dict[str, Any], episode_count: int) -> list[dict[str, str]]:
@@ -44,7 +45,7 @@ def build_outline_messages(project: dict[str, Any], episode_count: int) -> list[
         "- 结尾悬念：\n"
         "- 预计时长：秒"
     )
-    return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user}]
+    return [{"role": "system", "content": _system_prompt()}, {"role": "user", "content": user}]
 
 
 def build_script_messages(project: dict[str, Any], episode: dict[str, Any]) -> list[dict[str, str]]:
@@ -59,7 +60,7 @@ def build_script_messages(project: dict[str, Any], episode: dict[str, Any]) -> l
         "3) 每场标注时长；\n"
         "4) 结尾保留悬念，并在末尾给出下集预告式一句话。"
     )
-    return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user}]
+    return [{"role": "system", "content": _system_prompt()}, {"role": "user", "content": user}]
 
 
 def build_storyboard_messages(
@@ -73,7 +74,7 @@ def build_storyboard_messages(
         "要求：前 3 秒必须有视觉冲击的钩子镜头；镜头平均 2~4 秒；"
         "画面描述具体到人物动作、机位与光线；台词极简；提示词适合主流文生图/文生视频模型。"
     )
-    return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user}]
+    return [{"role": "system", "content": _system_prompt()}, {"role": "user", "content": user}]
 
 
 # --------------------------------------------------------------------------- #

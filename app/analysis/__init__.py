@@ -13,7 +13,14 @@ from app.analysis.metrics import (
     summarize_accounts,
     summarize_videos,
 )
-from app.analysis.sentiment import analyze_text, aggregate, score_comments
+from app.analysis.sentiment import (
+    analyze_text,
+    aggregate,
+    build_llm_messages,
+    parse_llm_scores,
+    score_comments,
+    score_comments_with_llm,
+)
 from app.analysis.service import analysis_date_options, refresh_sentiment, run_daily_analysis
 
 __all__ = [
@@ -31,7 +38,10 @@ __all__ = [
     "summarize_videos",
     "analyze_text",
     "aggregate",
+    "build_llm_messages",
+    "parse_llm_scores",
     "score_comments",
+    "score_comments_with_llm",
     "analysis_date_options",
     "refresh_sentiment",
     "run_daily_analysis",

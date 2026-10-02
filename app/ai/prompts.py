@@ -12,13 +12,17 @@ from __future__ import annotations
 from typing import Any
 
 from app.config import platform_label
+from app.prompts_store import prompt_text
 
-SYSTEM_PROMPT = (
-    "你是一名短视频内容创作顾问，服务对象是同时运营 B站 与 抖音 的创作者。"
-    "你会收到结构化的数据分析结果，请用简体中文输出：语言通俗、结论先行、"
-    "给出可执行的动作建议，避免空话；涉及数字时直接引用数据；"
-    "不确定的地方要说明推测依据，不要编造未提供的数据。"
-)
+
+def system_prompt() -> str:
+    """问答 / 咨询的系统提示词（可由 ``prompts/chat.system.md`` 覆盖）。"""
+    return prompt_text("chat.system")
+
+
+def brief_system_prompt() -> str:
+    """洞察生成任务（简报/选题/标题/发布时机）的系统提示词（``prompts/brief.system.md``）。"""
+    return prompt_text("brief.system")
 
 
 def fmt_int(value: Any) -> str:
@@ -139,7 +143,7 @@ def daily_brief_messages(metrics: dict[str, Any]) -> list[dict[str, str]]:
         "要求：不超过 600 字，数字必须来自上面的数据。"
     )
     return [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": brief_system_prompt()},
         {"role": "user", "content": user},
     ]
 
@@ -158,7 +162,7 @@ def topic_suggestion_messages(metrics: dict[str, Any]) -> list[dict[str, str]]:
         "```\n"
         "共 3~5 个选题，优先复用已验证的高健康度方向。"
     )
-    return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user}]
+    return [{"role": "system", "content": brief_system_prompt()}, {"role": "user", "content": user}]
 
 
 def title_optimize_messages(metrics: dict[str, Any], titles: list[str]) -> list[dict[str, str]]:
@@ -170,7 +174,7 @@ def title_optimize_messages(metrics: dict[str, Any], titles: list[str]) -> list[
         "请针对每个标题给出 2 个优化版本（分别适配 B站 与 抖音），"
         "并说明优化点（关键词、情绪钩子、数字/悬念的用法），控制在 400 字内。"
     )
-    return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user}]
+    return [{"role": "system", "content": brief_system_prompt()}, {"role": "user", "content": user}]
 
 
 def publish_time_messages(metrics: dict[str, Any]) -> list[dict[str, str]]:
@@ -180,7 +184,7 @@ def publish_time_messages(metrics: dict[str, Any]) -> list[dict[str, str]]:
         "请给出**发布时间建议**：分别针对 B站 与 抖音，说明推荐的 2 个发布时段、"
         "工作日与周末的差异，以及依据（引用发布时段健康度数据与平台用户习惯），300 字内。"
     )
-    return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user}]
+    return [{"role": "system", "content": brief_system_prompt()}, {"role": "user", "content": user}]
 
 
 def chat_messages(
@@ -196,7 +200,7 @@ def chat_messages(
     """
     context = metrics_to_context(metrics)
     messages: list[dict[str, Any]] = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt()},
         {
             "role": "system",
             "content": f"当前可用的数据上下文如下（回答必须以此为准，不要编造）：\n{context}",

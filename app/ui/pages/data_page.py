@@ -14,7 +14,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QCheckBox,
     QGridLayout,
@@ -248,6 +249,19 @@ class DataPage(QWidget):
         self.save_repo_button.clicked.connect(self._save_repo)
         status_layout.addWidget(self.save_repo_button)
         card.add_widget(status_row)
+
+        validation_row = QWidget()
+        validation_layout = QHBoxLayout(validation_row)
+        validation_layout.setContentsMargins(0, 0, 0, 0)
+        validation_layout.setSpacing(8)
+        self.validation_label = muted_label("数据校验：尚未导入")
+        self.validation_label.setWordWrap(False)
+        validation_layout.addWidget(self.validation_label, 1)
+        self.report_button = QPushButton("查看导入报告")
+        self.report_button.setToolTip("打开最近一次导入生成的数据校验报告（Markdown）")
+        self.report_button.clicked.connect(self._open_import_report)
+        validation_layout.addWidget(self.report_button)
+        card.add_widget(validation_row)
 
         demo_row = QWidget()
         demo_layout = QHBoxLayout(demo_row)
@@ -501,8 +515,43 @@ class DataPage(QWidget):
         self.refresh()
 
     # ------------------------------------------------------------------ #
+    # 导入校验报告（最近一次导入的数据质量问题）
+    # ------------------------------------------------------------------ #
+    def _render_validation(self) -> None:
+        report = self.context.last_import_report or {}
+        if not report:
+            self.validation_label.setText("数据校验：尚未导入｜导入后这里会显示校验结论")
+            self.report_button.setEnabled(False)
+            return
+        errors = int(report.get("error_count") or 0)
+        warnings = int(report.get("warning_count") or 0)
+        if errors or warnings:
+            self.validation_label.setText(
+                f"数据校验：错误 {errors} 处、警告 {warnings} 处｜{self._first_issue(report)}"
+            )
+        else:
+            self.validation_label.setText("数据校验：未发现问题 ✅")
+        self.report_button.setEnabled(bool(report.get("report_path")))
+
+    @staticmethod
+    def _first_issue(report: dict[str, Any]) -> str:
+        issues = report.get("errors") or report.get("warnings") or []
+        return str(issues[0]) if issues else "详见导入报告"
+
+    def _open_import_report(self) -> None:
+        path = str((self.context.last_import_report or {}).get("report_path") or "")
+        if not path:
+            self.context.status_message.emit("暂无导入报告：请先执行一次数据导入")
+            return
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(path)):
+            self.context.status_message.emit(f"无法打开报告（请手动查看）：{path}")
+        else:
+            self.context.status_message.emit(f"已打开导入报告：{path}")
+
+    # ------------------------------------------------------------------ #
     def refresh(self) -> None:
         self.refresh_repo_status()
+        self._render_validation()
         overview = self.context.overview()
         platform = self.platform_filter.current_key() or None
         keyword = self.keyword_edit.text().strip() or None

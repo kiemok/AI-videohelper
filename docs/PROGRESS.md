@@ -1,7 +1,7 @@
 # 项目开发进度记录
 
 > 项目：**基于B站与抖音的多源数据融合及AI驱动的内容创作决策系统**
-> 当前版本：**v0.8.0（数据看板 TOP 组件上下拖动缩放 + 比例记忆）**
+> 当前版本：**v0.11.1（配置迁移到用户目录：API Key 不随源码外发）**
 > 更新日期：2026-10-02
 > 维护方式：每完成一项任务即更新本文件（状态、验证结果、遗留问题）
 
@@ -18,7 +18,14 @@
 | **自定义技能（Skill）** | ✅ 已完成 | `app/skills`：Markdown + YAML 头部技能包，勾选启用后注入咨询提示词；内置 4 个示例 |
 | **界面自适应** | ✅ 已完成 | `ToolbarRow` 顶部标签/按钮固定尺寸 + 空间不足整体隐藏；`ResponsiveSplitter` 窄窗口上下堆叠；KPI 行 4→2 列 |
 | **MCP 外部工具** | ✅ 已完成 | `app/mcp`：官方 SDK（stdio / SSE），工具发现 + function calling 调用循环（最多 3 轮） |
-| 配置管理 | ✅ 已完成 | 本地 `config/settings.json`，API Key 只在用户本机 |
+| **情感分析双引擎** | ✅ 已完成 | 词典法（默认、可解释）/ 大模型批量打标（25 条一批，识别反讽，漏答自动回退）；切换引擎自动清空历史打分重算 |
+| **提示词模板可配置** | ✅ 已完成 | `app/prompts_store.py` + 「技能与工具」页：4 个内置角色设定可用 `prompts/*.md` 覆盖，保存即生效、可逐项恢复默认 |
+| **创作咨询 RAG** | ✅ 已完成 | `app/consulting/retrieval.py`：BM25 关键词检索本地作品/评论素材注入提示词，界面展示命中素材与检索得分 |
+| **产出导出闭环** | ✅ 已完成 | `app/ui/export_helper.py`：统一「复制 / 导出 Markdown（带元信息头）/ 导出 CSV / 打开目录」，已接入 AI 决策、分析、创作咨询三页 |
+| **导入校验报告** | ✅ 已完成 | `app/collect/validation.py`：文件 / 行 / 关系三层校验，结论上界面 + Markdown 报告落 `data/export/` |
+| **单元测试（pytest）** | ✅ 已完成 | `tests/`（67 项，全绿）+ `pytest.ini` + `requirements-dev.txt`；覆盖指标 / 融合 / 异常 / 情感 / 检索 / 技能 / 校验 |
+| **日志与错误入口** | ✅ 已完成 | 菜单「日志」：打开 app.log / alerts.log / 日志目录 / 查看最近错误 / 内联日志尾部；`_on_error` 统一记录详情 |
+| 配置管理 | ✅ 已完成 | 配置存**用户目录**（`%APPDATA%\DataPulseAI\settings.json`），API Key 不随源码外发；旧路径自动迁移 |
 | 数据存储（SQLAlchemy 统一模型） | ✅ 已完成 | 14 张表；默认 SQLite，可按行切换 MySQL |
 | **数据来源（Git 数据仓库）** | ✅ 已完成 | `app/datasource`：git clone/pull、ZIP 归档、仅本地目录；软件内**不含爬取** |
 | 数据融合 | ✅ 已完成 | 标准 CSV 与平台原始 JSON/JSONL → 统一模型映射 + 幂等入库 |
@@ -26,7 +33,7 @@
 | AI 解读与建议 | ✅ 已完成 | DeepSeek/通义千问（OpenAI 兼容）+ 无 Key 本地回退 |
 | 交互问答 | ✅ 已完成 | 问题 + 数据上下文 → 回答，历史落库 |
 | 可视化看板 | ✅ 已完成 | 趋势图（含拐点标记）/漏斗/环形图/迷你趋势条/热词标签云 |
-| **视频创作咨询（扩展方向一）** | 🟡 初步框架可用 | `app/consulting/` + 咨询页：分类咨询、要点提取、历史落库 |
+| **视频创作咨询（扩展方向一）** | ✅ 已完成 | `app/consulting/` + 咨询页：分类咨询、BM25 检索增强（RAG）、要点提取、历史落库 |
 | **AI 短剧（扩展方向二）** | 🟡 初步框架可用 | `app/drama/` + 短剧页：大纲→剧本→分镜三级生成，多模态接口预留 |
 | 任务调度（APScheduler） | ✅ 已完成（仅触发分析） | 每日定时执行分析；接入爬虫后改为「先采集再分析」 |
 | MCP / 文生图 / 文生视频 | ⏸ 已预留 | 配置文件、数据字段（image_prompt/video_prompt）与模块位置已留出 |
@@ -42,7 +49,9 @@
 - 安装统一使用国内镜像：
   - 清华：`pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple`
   - 阿里云：`pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/`
-- `.gitignore` 已排除：`.venv/`、`config/settings.json`（含 API Key）、`data/`、`logs/`、`.idea/`、`.reasonix/`。
+- `.gitignore` 已排除：`.venv/`、`config/settings.json` 与 `config/*.migrated`（旧版配置与迁移备份）、
+  `data/`、`logs/`、`.idea/`、`.reasonix/`。**新版配置位于用户目录**（`%APPDATA%\DataPulseAI\`），
+  本来就不在项目里。
 
 ### 2. 配置管理（`app/config.py`）
 
@@ -50,7 +59,8 @@
 - 服务商预设：DeepSeek（`https://api.deepseek.com/v1`，`deepseek-chat`）、
   通义千问（`https://dashscope.aliyuncs.com/compatible-mode/v1`，`qwen-plus`）、自定义 OpenAI 兼容。
 - 环境变量 `CCD_CONFIG_PATH` 可指定配置文件位置。
-- **API Key 处理**：只写入本地 `config/settings.json`，不入库、不入 Git；设置页用密码框输入，
+- **API Key 处理**：只写入**用户目录**配置（`%APPDATA%\DataPulseAI\settings.json`，非 Windows 为
+  `~/.config/DataPulseAI/settings.json`），不入库、不入 Git、不随源码拷贝外发；设置页用密码框输入，
   并支持「显示/隐藏」与「测试大模型连接」。
 
 ### 3. 数据存储层（`app/db/`）
@@ -174,8 +184,11 @@ $env:QT_QPA_PLATFORM="windows"; .\.venv\Scripts\python.exe scripts\gui_smoke.py 
 
 ## 四、关键设计决策
 
-1. **存储先用 SQLite、预留 MySQL**：桌面端零配置即可运行；`db_url` 一行切换 MySQL，
-   表结构由 SQLAlchemy 统一生成，两种后端字段一致。理由：本机无 MySQL 服务时也能演示与自测。
+1. **存储用 SQLite（默认，且唯一必需项）**：桌面端单机单用户、数据量在 MB 级
+   （当前 14 张表 1773 行 / 1.37 MB），SQLite 单文件零配置即可运行，已开启 WAL 与外键。
+   由于所有读写都走 SQLAlchemy 统一模型，代码里**额外**保留了「连接串一行切换 MySQL」的扩展点
+   （表结构自动生成、字段一致）—— 它**不是运行前提**：默认配置下 MySQL 相关模块完全不会被加载，
+   只有用户明确填入 `mysql+pymysql://` 连接串时才生效（需自备服务与 PyMySQL 驱动）。
 2. **爬虫后置、接口先行**：先定义 `BaseCollector` 契约与融合映射，让「采集 → 分析 → AI → 看板」
    全链路可用离线样例数据跑通；接入爬虫时只需实现 `fetch()` 并注册。
 3. **无 Key 也能用**：大模型调用与本地规则引擎共用同一份数据上下文，
@@ -204,14 +217,16 @@ $env:QT_QPA_PLATFORM="windows"; .\.venv\Scripts\python.exe scripts\gui_smoke.py 
 
 ## 六、下一步计划
 
-1. **接入 B站采集器**：`x/space/wbi/arc/search`（wbi 签名 + Cookie）、`x/web-interface/view`、
-   `x/v2/reply/wbi/main`；实现 `fetch()` 并验证融合链路。
-2. **接入抖音采集器**：Playwright 登录态抓包 + 签名方案，配合代理 IP 池与 1~3s 随机间隔限速。
-3. **定时采集+分析**：`DailyScheduler` 触发采集流水线，写入 `collect_task` 并在界面展示任务状态。
-4. **报告导出**：数据简报导出 Markdown/PDF，明细导出 Excel。
-5. **MCP 扩展**：接入 `mcp` SDK，把外部工具服务器暴露给问答模块。
-6. **多模态预留落地**：文生图（封面草稿）、文生视频扩展接口。
-7. **测试与打包**：补 pytest 单测，PyInstaller 打包。
+> **数据采集口径**：本软件**不含爬取功能**（见 §12.2 的设计取舍）——B站/抖音的实际采集由你在外部
+> 维护并推送到自建 Git 仓库，软件只负责拉取、导入与分析。因此原先的「接入 B站 / 抖音采集器」两项
+> 不属于本项目范围，已从计划中移除。
+
+1. **产出闭环补充**：AI 短剧工坊的大纲 / 剧本 / 分镜导出，以及多模态落地
+   （分镜表已保存 `image_prompt` / `video_prompt` 与镜头时长，接入文生图 → 文生视频 → TTS 后可串联成片）。
+2. **数据管道增强**：导入校验报告（缺失字段 / 类型错误 / 重复行）、仓库两次提交的指标 diff、分块增量导入。
+3. **调度增强**：多时间点任务、执行历史记录与失败重试。
+4. **测试与打包**：补 pytest 单测（指标 / 融合映射 / BM25 检索 / 技能解析），PyInstaller 打包免安装 exe。
+5. **交付材料**：用户手册、论文图表（系统架构 / 数据库 ER / 算法流程）与演示脚本。
 
 ---
 
@@ -635,6 +650,204 @@ AI 页截图确认右栏为洞察摘要（含真实 DeepSeek 内容）且窗口�
 
 ---
 
+### 12.11 情感分析双引擎：词典法 + 大模型打标（v0.9.0）
+
+**目标**：让评论情感极性分析从「纯词典法」升级为「可选大模型打标」，同时保留离线兜底。
+
+- `app/analysis/sentiment.py` 新增：`build_llm_messages()`（批量打标请求）、
+  `parse_llm_scores()`（解析，容忍 ```json 包裹与前后废话，非法条目丢弃、越界分数截断）、
+  `score_comments_with_llm()`（按 25 条/批调用，**漏答/答错/整批失败自动用词典法补齐**，
+  保证返回结果一定覆盖全部输入）；
+- `refresh_sentiment(engine=...)` 与 `run_daily_analysis(sentiment_engine=..., llm_client=...)`
+  贯通引擎选择；聚合结果新增 `engine` / `llm_scored` 字段，分析页情感卡片副标题显示实际引擎；
+- 新增配置 `AppSettings.sentiment_engine`（lexicon / llm）+ 设置页「情感分析方式」；
+- **一致性处理**：切换引擎时 `reset_comment_sentiment()` 清空历史打分并提示，避免库里混着两套口径。
+
+**验证**：
+
+| 检查项 | 结果 |
+| --- | --- |
+| 解析健壮性 | 纯数组 / 带代码块 / 前后废话均正确解析；`{"id":"x","score":1}` 丢弃、`score=9` 截断为 1.0、未知 label 用分数反推 |
+| 部分应答兜底 | 模型只答 2/4 条 → 其余 2 条用词典法补齐，结果覆盖全部 4 条 |
+| 整批异常兜底 | 模拟网络异常 → 0 命中，结果与词典法输出**完全一致**，错误仅记日志 |
+| 真实打标（DeepSeek） | 8/8 命中，0.9s；示例：「希望多出实测」模型 +0.30/positive vs 词典 0.00/neutral（**识别出隐含正面期待**） |
+| 端到端 | 280 条评论：词典法正面占比 27.14% → 大模型打标 **32.14%**（19.7s，12 批）；无 Key 时自动回退 lexicon |
+| 切换引擎 | 由 lexicon 切到 llm 时提示「280 条历史打分已清空，下次分析将重新打分」 |
+
+### 12.12 提示词模板可配置（v0.9.0）
+
+**目标**：把大模型的「角色设定」从代码里搬到可编辑文件，不改代码也能调优。
+
+- 新增 `app/prompts_store.py`：4 个模板（`chat.system` / `brief.system` / `consulting.system` /
+  `drama.system`），默认内容内置于代码（单一来源），用户可在 `<项目根>/prompts/*.md` 覆盖；
+- **回退优先**：文件不存在、读取失败或内容为空时自动使用内置默认，误删不会让功能失效；
+- 每次构造请求时读取（文件很小），**改完即生效、无需重启**；
+- 原 `SYSTEM_PROMPT` 常量改为 `system_prompt()` / `brief_system_prompt()` / `_system_prompt()`
+  函数调用（`app/ai`、`app/consulting`、`app/drama` 共 9 处使用点）；
+- 「技能与工具」页新增「提示词模板」卡片：列表（标注是否已自定义）、编辑、保存、恢复内置默认、
+  写入默认模板文件、打开模板目录；`prompts/` 已加入 `.gitignore`。
+
+**验证**（真实 DeepSeek）：
+
+| 检查项 | 结果 |
+| --- | --- |
+| 覆盖生效 | 把 `chat.system` 改为「回答必须以『【实验】』开头」→ 提问「抖音这周该重点做什么？」→ 回答**确实以【实验】开头**，且内容仍引用了数据 |
+| 恢复默认 | 删除覆盖文件后 `prompt_text` 立即回到内置默认 |
+| 空文件回退 | 覆盖文件只写空白 → 自动回退内置默认（长度校验通过） |
+| 列表状态 | 只有被覆盖的那一项显示「● 已自定义」 |
+
+### 12.13 创作咨询 RAG：BM25 本地检索增强（v0.9.0）
+
+**目标**：让咨询基于「你的真实作品与评论」而不是只有汇总指标。
+
+- 新增 `app/consulting/retrieval.py`：自研 **BM25** 检索（中文单字 + 二元组切分、停用词过滤、
+  `K1=1.5 / B=0.75`），语料 = 作品（标题/账号/指标）+ 最近 400 条评论（原文 + 情感标签）；
+- **实现选择说明**：用关键词检索而非向量检索 —— 桌面端零额外依赖（不需要 embedding 服务 / torch /
+  向量库）、离线可用、每条素材都带 BM25 得分**完全可解释**；接口固定，升级为向量检索只需替换
+  `BM25Index.search` 的打分实现；
+- 索引带进程内缓存（按评论条数指纹失效），检索结果按文本去重（样例数据里的重复评论不再占满素材位）；
+- 注入方式：`build_advice_messages(..., material=...)` 增加「相关历史素材」段，
+  输出要求同步改为「依据（引用数据或上方素材）」；咨询页新增素材区，显示命中条数、素材原文与得分；
+- 新增配置 `AppSettings.consulting_rag_enabled`（默认开启）+ 设置页「咨询检索增强」开关；
+  检索失败或库为空时自动跳过，**不影响咨询主流程**。
+
+**验证**（真实 DeepSeek + 本地库 24 作品 / 280 评论）：
+
+| 检查项 | 结果 |
+| --- | --- |
+| 索引构建 | 169 条素材（24 作品 + 145 条有内容的评论），**0.02s**；二次调用命中缓存 0.003s |
+| 检索质量 | 「数码测评 充电宝 播放」→ 3 个数码测评作品（Top BM25 26.6 正是播放最高的充电宝视频）；「观众对音质/价格评价」→ 价格虚高 / 音质一般 / 性价比高；「标题党 负面反馈」→ 标题党 / 劝退 |
+| 去重 | 相同评论只保留得分最高的一条 |
+| 咨询效果 | 6.0s 生成，注入 6 条素材；回答「依据」直接引用检索到的作品（如「《为什么你的充电宝越充越慢》播放量异常放量 z=2.4」） |
+| 关闭开关 | `use_rag=False` → 素材 0 条，提示「已在设置中关闭检索增强」 |
+
+---
+
+### 12.14 产出闭环：统一导出 / 复制（v0.10.0）
+
+**目标**：让每个页面生成的内容都能「带走」，形成「生成 → 导出 → 交付」的完整闭环。
+
+- 新增 `app/ui/export_helper.py`：
+  - `ExportPayload`（标题 / 文件名主干 / 正文 / 元信息 / CSV 列与行）与 `markdown()`
+    —— 自动附上**导出时间、所用模型、数据口径**；
+  - `copy_to_clipboard()` / `save_markdown()`（QFileDialog）/ `save_csv()`（**UTF-8-BOM**，
+    Excel 打开不乱码）/ `open_export_dir()`；默认落盘 `data/export/`；
+  - `ExportActions`：可复用的导出按钮组（复制 / 导出 MD /（可选）导出 CSV / 打开目录），
+    内部基于 `ToolbarRow`，**因此同样享受「空间不足整体隐藏、不挤压变形」的自适应行为**；
+- 各页面只需提供一个 `provider` 回调返回 `ExportPayload`：
+
+| 页面 | 导出内容 | CSV |
+| --- | --- | --- |
+| AI 决策助手 | 数据简报、爆款选题、标题优化、发布时机（记录最近一次生成的模型与口径） | — |
+| 内容与评论分析 | 分析摘要（数据口径 + Top10 排行 + 情感分布 + 核心热词） | 作品完整排行 |
+| 视频创作咨询 | 咨询建议（问题 + 类型 + 正文 + RAG 素材与得分） | — |
+| 数据看板 | 既有的一键导出分析报表（Markdown + CSV）保持不变 | ✔ |
+
+**验证**：三个页面的 `provider` 均返回正确 payload（元信息含数据口径 `2026-10-02`、窗口 `近 30 天`、
+生成方式 `deepseek / deepseek-chat`、检索素材 `1 条`）；剪贴板文本长度与 Markdown 一致（143 字符）；
+实际写出 `smoke_export.md`（1,973 B）与 `smoke_export.csv`（2,854 B / 24 行）；
+无内容时提示「暂无可导出的内容，请先生成」，无表格数据时 CSV 操作给出对应提示。
+
+### 12.15 计划与文档口径修正（v0.10.0）
+
+- `docs/PROGRESS.md`「六、下一步计划」与 `README.md`「八、后续计划」中**残留的「接入 B站 / 抖音采集器」
+  两项目已移除**，改为明确写明「软件不含爬取功能，采集由外部维护并推送到自建 Git 仓库」；
+- 计划项同步为当前真实剩余工作：产出闭环补充（短剧导出与多模态）、数据管道增强（导入校验 / 指标 diff）、
+  调度增强、测试与打包、交付材料；已完成项（MCP 扩展、报告导出、RAG）从计划中移除，避免与现状不符。
+
+---
+
+### 12.16 导入校验报告（v0.11.0）
+
+**目标**：数据源由用户自己维护，出错时必须能自己看懂「为什么数据没进来」。把原先的**静默跳过**
+变成结构化问题清单。
+
+- 新增 `app/collect/validation.py`：`Issue` / `ValidationReport`（错误 + 警告 + 行统计 + 文件统计）、
+  `is_number` / `first_value` 等判断工具、`write_report()`（落 `data/export/import_report_<ts>.md`）；
+- `loader.import_repository` 全流程埋点，三层校验：
+
+| 层级 | 覆盖点 |
+| --- | --- |
+| 文件层 | 命名未识别（进 `scan.skipped`）、JSON 解析失败（新增 `read_rows_checked()` 区分「解析失败」与「空文件」）、仓库里没有可识别文件 |
+| 行层 | 账号 / 作品 / 快照 / 评论缺 ID、缺统计日期、标题或昵称为空、播放等数值字段非数字 |
+| 关系层 | 快照 / 评论引用了库中不存在的作品（原先只打一条日志或直接 `continue`） |
+
+- `ImportResult.report` 随导入结果回传，`summary()` 附带校验结论；`AppContext.last_import_report`
+  供界面读取；数据仓库页新增校验行（错误 / 警告数 + 首条问题）与「查看导入报告」按钮
+  （`QDesktopServices` 调系统默认程序打开）。
+
+**验证**（构造脏数据仓库：缺 ID、空标题、非数字播放量、引用不存在作品、非法 JSON、未识别文件）：
+
+| 检查项 | 结果 |
+| --- | --- |
+| 扫描 | `accounts:1、videos:2、snapshots:1、comments:1`，未识别文件 `readme_notes.csv` 已记录 |
+| 校验结果 | **错误 5 处、警告 8 处**，逐条给出文件:行号 + 原因 + 修复建议 |
+| 行统计 | 账号 2 读 / 1 入 / 1 跳、作品 3 读 / 2 入 / 1 跳、快照 2 读 / 1 入 / 1 跳、评论 4 读 / 3 入 / 1 跳（与错误数完全对应） |
+| 报告文件 | `data/export/import_report_*.md`（含文件统计、行统计表、问题清单、幂等提示） |
+| 界面 | 校验行显示「错误 5 处、警告 8 处｜❌ [账号] accounts.csv:1：缺少账号 ID → 补 mid / uid 或 platform_account_id 字段」，报告按钮可用 |
+
+### 12.17 单元测试与两个真实缺陷修复（v0.11.0）
+
+- 新增 `tests/`（`pytest.ini` + `conftest.py` + `requirements-dev.txt`），**67 项测试全绿**，覆盖：
+  指标口径与派生（累计→增量、互动率、健康度范围、漏斗单调、headline 字段）、双平台原始字段融合、
+  异常拐点、情感分析（词典法 + LLM 解析 + 漏答/整批失败兜底）、BM25 检索（分词/排序/去重/空索引）、
+  技能解析与提示词拼接、导入校验报告。
+- 编写测试过程中**发现并修复两个真实缺陷**（这正是单测的价值）：
+
+| 缺陷 | 现象 | 根因 | 修复 |
+| --- | --- | --- | --- |
+| 衰减类拐点永不触发 | `drop` / `recover` / `fade` 三个分支实际是死代码，示例数据只能检出 `spike` | `detect_turning_points` 用入参 `growth_rate` 判断「增长转负」，而该字段口径是「当日新增 / 前一日累计」**恒为正** | 改为在函数内部自算环比变化率（`series.pct_change()`，可正可负） |
+| 负向 z 被拉平 | 即便修好变化率，下跌仍难触发阈值 | `z = concat([z_raw, z_smooth]).max(axis=1)` 只取最大值，把负 z 拉向 0 | 方向分离：放量取 `max`、衰减取 `min`，并按方向记录 `z_score` |
+
+  **修复效果**（同一份示例数据）：拐点由「spike 8 个」变为 **spike 8 + drop 3 + fade 14 = 25 个**，
+  三类拐点均能正确检出。
+
+- 顺带增强 `fusion.to_int` / `to_float`：容错 `"1,234"` 这类带千分位/空格的数值写法。
+
+### 12.18 日志与错误入口统一（v0.11.0）
+
+- 菜单栏新增「日志(&L)」：**打开日志文件（app.log）/ 打开告警日志（alerts.log）/ 打开日志目录 /
+  查看最近错误 / 内联查看日志尾部**（`QMessageBox.setDetailedText`，无需离开软件即可排查）；
+- 错误统一走 `AppContext._on_error()`：写日志 + 状态栏提示 + 记录 `last_error`
+  （时间 / 操作 / 错误信息），状态栏文案追加「详情见『日志 → 查看最近错误』」；
+- 新增 `AppContext.last_error_text()`（含日志文件绝对路径）与 `tail_log(lines=120)`。
+
+---
+
+### 12.19 配置迁移到用户目录：API Key 不随源码外发（v0.11.1）
+
+**问题**：API Key 原先保存在项目内的 `config/settings.json`。虽然已被 `.gitignore` 排除
+（不会进版本库、日志里也不含明文），但**打包 / 拷贝整个项目文件夹时会把它一起带走** —— 交源码、拷 U 盘、
+传网盘都存在泄露风险。
+
+**做法**：
+
+- `app/config.py` 新增 `user_config_dir()`：Windows 取 `%APPDATA%\DataPulseAI`，
+  其它系统取 `~/.config/DataPulseAI`；`DEFAULT_CONFIG_PATH` 指向用户目录；
+  `config_path()` 仍支持 `CCD_CONFIG_PATH` 覆盖（且**覆盖时不做迁移**，便于测试与多环境隔离）；
+- 新增 `migrate_legacy_config()`：首次运行、且新位置尚无配置时，把旧
+  `<项目根>/config/settings.json` 复制到用户目录，并把旧文件**移到用户目录**改名
+  `settings.legacy-backup.json` —— 项目目录里不再保留任何含 Key 的文件（否则打包源码仍会带走它），
+  内容同时得到备份；由 `load_settings()` 与 `AppContext.__init__` 自动调用，**幂等**；
+- 启动时若发生迁移，状态栏提示新路径；设置页提示文案、README（配置说明 / 目录树 / Key 说明）
+  与 PROGRESS 同步更新；`.gitignore` 增加 `config/*.migrated`。
+
+**验证**（真实执行迁移）：
+
+| 检查项 | 结果 |
+| --- | --- |
+| 迁移目标 | `C:\Users\<用户>\AppData\Roaming\DataPulseAI\settings.json` |
+| 内容一致性 | 新旧 JSON **逐字段完全一致**（Key 长度 35 不变） |
+| 旧文件处理 | 原 `config/settings.json` 已改名为 `settings.json.migrated`（备份保留） |
+| 幂等性 | 再次调用返回 `None`，不会重复迁移 |
+| 读取生效 | `load_settings()` 读到 `provider=deepseek` / `model=deepseek-chat`，Key 非空 |
+| 环境变量覆盖 | `CCD_CONFIG_PATH` 仍生效，且覆盖时**跳过**迁移 |
+| 端到端 | 迁移后真实调用 DeepSeek 成功（`本地回退 = False`，回答正常） |
+
+**意义**：现在把整个项目文件夹压缩、拷 U 盘或交源码，都**不会带走 API Key**；换机器只需重新填一次。
+
+---
+
 ## 十三、变更记录
 
 | 日期 | 版本 | 内容 |
@@ -656,3 +869,7 @@ AI 页截图确认右栏为洞察摘要（含真实 DeepSeek 内容）且窗口�
 | 2026-10-02 | v0.7.0 | 界面自适应改造：新增 `ToolbarRow`（顶部标签/按钮固定尺寸 + 空间不足时整体隐藏）、`ResponsiveSplitter`（窄窗口左右分栏→上下堆叠）、`PageScrollArea`、`ResponsiveKpiRow`（KPI 4 列→2 列）；顶栏与 8 个页面工具栏、5 个页面分栏全部接入，消除缩放时的文字裁切、竖排与按钮变形 |
 | 2026-10-02 | v0.7.1 | 窗口最小宽度按实际布局需求动态计算（侧栏 232 + 页面区 520 + AI 面板 300 + 手柄 6 = 1058，收起面板 752），面板缩到最小时窗口无法再继续缩小；替换原先写死的 `setMinimumSize(900, 620)`，并按屏幕可用宽度兜底 |
 | 2026-10-02 | v0.8.0 | 数据看板「作品表现 TOP」支持上下拖动缩放：与上方图表区组成垂直分割（手柄可拖动，两侧有最小高度兜底），比例持久化到 `AppSettings.dashboard_top_ratio`（默认 45%，600ms 防抖写盘），新增 `AppContext.save_preference()` 轻量偏好保存 |
+| 2026-10-02 | v0.9.0 | AI 技术亮点三项：**情感分析双引擎**（大模型批量打标 25 条/批，漏答自动回退词典法；切换引擎清空历史打分重算）、**提示词模板可配置**（`app/prompts_store.py`，4 个角色设定可用 `prompts/*.md` 覆盖，改完即生效）、**创作咨询 RAG**（`app/consulting/retrieval.py` 自研 BM25 检索本地作品/评论素材注入提示词，界面展示命中素材与得分） |
+| 2026-10-02 | v0.10.0 | 产出闭环：新增 `app/ui/export_helper.py`（统一导出/复制：复制剪贴板、导出 Markdown（带元信息头）、导出 CSV（UTF-8-BOM）、打开导出目录；`ExportActions` 按钮组复用 `ToolbarRow` 自适应）；接入 AI 决策助手（简报/选题/标题/发布时机）、内容与评论分析（摘要 MD + 排行 CSV）、视频创作咨询（建议 + RAG 素材）；同步修正 README/PROGRESS 中过时的「接入爬虫」计划口径 |
+| 2026-10-02 | v0.11.0 | 质量底座三项：**导入校验报告**（`app/collect/validation.py`，文件/行/关系三层校验 + `import_report_*.md` + 数据页校验行与报告入口）、**单元测试**（`tests/` 67 项 pytest 全绿，覆盖指标/融合/异常/情感/检索/技能/校验）、**日志与错误入口统一**（菜单「日志」5 项 + `_on_error` 记录最近错误 + `tail_log`）；并修复单测发现的两个真实缺陷：衰减类拐点永不触发（growth_rate 口径致 drop/recover/fade 成死代码）、负向 z 被 `max` 拉平 |
+| 2026-10-02 | v0.11.1 | 配置迁移到**用户目录**（`%APPDATA%\DataPulseAI\settings.json`，非 Windows 为 `~/.config/DataPulseAI/`），使 API Key 不再随源码拷贝 / 打包外发；新增 `user_config_dir()` 与幂等的 `migrate_legacy_config()`（旧文件改名 `.migrated` 备份、启动提示新路径），`CCD_CONFIG_PATH` 覆盖与跳过迁移逻辑保留 |

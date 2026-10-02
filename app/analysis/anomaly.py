@@ -46,19 +46,29 @@ def detect_turning_points(
         # 突变用原始序列的 z（平滑会削峰），持续变化用平滑序列的 z
         z_raw = _zscore_series(series, window)
         z_smooth = _zscore_series(smooth, window)
-        z = pd.concat([z_raw, z_smooth], axis=1).max(axis=1)
-        growth = part["growth_rate"].reset_index(drop=True)
+        z = pd.concat([z_raw, z_smooth], axis=1)
+        # 方向分离：放量看两条序列的最大值，衰减看最小值。
+        # （只取 max 会把负 z 拉平到接近 0，导致 drop / recover 永远达不到阈值）
+        z_up = z.max(axis=1)
+        z_down = z.min(axis=1)
+        # 环比变化率由序列**自行计算**：入参 growth_rate 是「当日新增 / 前一日累计」的比值（恒为正），
+        # 用它判断「增长转负」永远不成立，会让 drop / recover / fade 三个分支变成死代码。
+        growth = series.pct_change().fillna(0.0)
         for idx in range(1, len(series)):
-            z_val = float(z.iloc[idx])
+            up_val = float(z_up.iloc[idx])
+            down_val = float(z_down.iloc[idx])
             prev_growth = float(growth.iloc[idx - 1])
             cur_growth = float(growth.iloc[idx])
             kind = None
-            if z_val >= z_threshold and cur_growth > prev_growth:
+            z_val = up_val
+            if up_val >= z_threshold and cur_growth > prev_growth:
                 kind = "spike"
-            elif z_val >= z_threshold and cur_growth < 0:
+            elif down_val <= -z_threshold and cur_growth < 0:
                 kind = "drop"
-            elif z_val <= -z_threshold and cur_growth > prev_growth and prev_growth < 0:
+                z_val = down_val
+            elif down_val <= -z_threshold and cur_growth > prev_growth and prev_growth < 0:
                 kind = "recover"
+                z_val = down_val
             elif prev_growth > 0.15 and cur_growth < -0.1:
                 kind = "fade"
             if kind is None:

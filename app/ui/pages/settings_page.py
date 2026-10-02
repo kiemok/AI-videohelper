@@ -60,8 +60,9 @@ class SettingsPage(QWidget):
         root.addWidget(title)
         root.addWidget(
             hint_label(
-                "大模型 API Key 只保存在本机配置文件（默认 config/settings.json，已加入 .gitignore），"
-                "不会上传到任何服务器，也不会写入数据库。"
+                "大模型 API Key 只保存在本机**用户目录**的配置文件"
+                "（Windows：%APPDATA%\\DataPulseAI\\settings.json），"
+                "不会上传到任何服务器、不会写入数据库，也不会随源码拷贝外发。"
             )
         )
 
@@ -118,8 +119,15 @@ class SettingsPage(QWidget):
         form.setLabelAlignment(Qt.AlignRight)
 
         self.db_edit = QLineEdit()
-        self.db_edit.setPlaceholderText(default_sqlite_url())
+        self.db_edit.setPlaceholderText("留空即使用本地 SQLite 单文件（推荐，无需安装数据库）")
         form.addRow("数据库连接串", self.db_edit)
+        form.addRow(
+            hint_label(
+                "默认使用本地 SQLite 单文件（<项目根>/data/content_decision.db）：零配置、无需安装任何数据库服务。"
+                "仅当你确实需要多台机器共享同一个库时，才填写 mysql+pymysql:// 连接串"
+                "（需自备 MySQL 服务并安装 PyMySQL 驱动）。"
+            )
+        )
         form.addRow("", hint_label(f"默认 SQLite（本地单文件，零配置）。切换 MySQL 示例：{MYSQL_EXAMPLE}"))
 
         row = QWidget()
@@ -199,6 +207,27 @@ class SettingsPage(QWidget):
         row_layout.addWidget(self.llm_test_button)
         row_layout.addStretch(1)
         form.addRow("", row)
+
+        self.sentiment_bar = SegmentBar(
+            [("离线词典法", "lexicon"), ("大模型打标", "llm")], current="lexicon"
+        )
+        form.addRow("情感分析方式", self.sentiment_bar)
+        form.addRow(
+            hint_label(
+                "评论情感极性分析的引擎：词典法完全离线、零成本、可解释；"
+                "大模型打标按批调用（25 条/次、单次上限 600 条），能识别反讽与「恰饭 / 真香」等网络用语，"
+                "失败或漏答的条目会自动回退词典法（需先配置上面的 API Key）。"
+            )
+        )
+
+        self.rag_box = QCheckBox("视频创作咨询启用 RAG 检索（本地作品与评论素材）")
+        form.addRow("咨询检索增强", self.rag_box)
+        form.addRow(
+            hint_label(
+                "启用后，生成创作咨询前会先用 BM25 关键词检索从本地数据仓库找出相关作品与评论，"
+                "作为素材注入提示词，让建议更贴合你的实际内容；完全离线、每条素材都能看到检索得分。"
+            )
+        )
         return group
 
     def _build_task_group(self) -> QGroupBox:
@@ -263,6 +292,8 @@ class SettingsPage(QWidget):
         level_index = self.log_level_box.findText(settings.log_level.upper())
         self.log_level_box.setCurrentIndex(level_index if level_index >= 0 else 1)
         self.theme_bar.set_current(settings.theme or "dark")
+        self.sentiment_bar.set_current(settings.sentiment_engine or "lexicon")
+        self.rag_box.setChecked(bool(settings.consulting_rag_enabled))
         self._on_provider_changed()
         self.refresh_schedule_status()
 
@@ -299,6 +330,8 @@ class SettingsPage(QWidget):
             schedule_time=self.schedule_time_edit.text().strip() or "08:30",
             # 外观主题以 AppContext 为准（顶栏与设置页切换都会同步它），UI 值仅作兜底
             theme=str(self.context.settings.theme or self.theme_bar.current_key() or "dark"),
+            sentiment_engine=str(self.sentiment_bar.current_key() or "lexicon"),
+            consulting_rag_enabled=self.rag_box.isChecked(),
             llm=llm,
         )
 
