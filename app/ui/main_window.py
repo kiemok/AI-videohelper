@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from PySide6.QtCore import QRectF, QSize, Qt
+from PySide6.QtCore import QRectF, QSize, Qt, QTimer
 from PySide6.QtGui import QAction, QColor, QFont, QPainter, QPen
 from PySide6.QtWidgets import (
     QApplication,
@@ -40,6 +40,7 @@ from app.ui.pages import (
     DataPage,
     DramaPage,
     SettingsPage,
+    SkillsPage,
 )
 from app.ui.theme import COLORS, FONT_MONO, NAV_WIDTH, rgba, tone_color
 
@@ -51,6 +52,7 @@ NAV_ITEMS: tuple[dict[str, str], ...] = (
     {"icon": "☰", "label": "视频创作咨询", "badge": "规划", "tone": "cyan"},
     {"icon": "▶", "label": "AI 短剧工坊", "badge": "规划", "tone": "violet"},
     {"icon": "⛁", "label": "数据仓库与导入", "badge": "仓库", "tone": "cyan"},
+    {"icon": "⛭", "label": "技能与工具", "badge": "MCP", "tone": "violet"},
     {"icon": "⚙", "label": "调度与设置", "badge": "", "tone": "muted"},
 )
 
@@ -194,38 +196,42 @@ class TitleBar(QFrame):
         self.window_ref = window
         self.setObjectName("TitleBar")
         self.setFixedHeight(48)
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(14, 0, 14, 0)
-        layout.setSpacing(10)
-
-        layout.addWidget(LogoWidget(28))
-        name = QLabel("DataPulse AI")
-        name.setObjectName("AppName")
-        layout.addWidget(name)
-        caption = QLabel(f"{__app_name__}  v{__version__}")
-        caption.setObjectName("AppVersion")
-        layout.addWidget(caption)
-
-        divider = QLabel("｜")
-        divider.setObjectName("MutedText")
-        layout.addWidget(divider)
 
         from app.ui.theme import THEME_LABELS
         from app.ui.widgets.cards import Pill, SegmentBar, StatusDot
+        from app.ui.widgets.toolbar import ToolbarRow
+
+        bar = ToolbarRow(spacing=10, margins=(14, 0, 14, 0)).fill_height()
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        outer.addWidget(bar)
+
+        bar.add(LogoWidget(28), ToolbarRow.REQUIRED)
+        name = QLabel("DataPulse AI")
+        name.setObjectName("AppName")
+        bar.add(name, ToolbarRow.REQUIRED)
+        caption = QLabel(f"{__app_name__}  v{__version__}")
+        caption.setObjectName("AppVersion")
+        bar.add(caption, ToolbarRow.LOW)
+
+        divider = QLabel("｜")
+        divider.setObjectName("MutedText")
+        bar.add(divider, ToolbarRow.NORMAL)
 
         self.db_dot = StatusDot(COLORS["cyan"])
         self.db_pill = Pill("SQLite 本地单文件", "cyan")
-        layout.addWidget(self.db_dot)
-        layout.addWidget(self.db_pill)
+        bar.add(self.db_dot, ToolbarRow.HIGH)
+        bar.add(self.db_pill, ToolbarRow.HIGH)
 
         self.model_dot = StatusDot(COLORS["text_muted"])
         self.model_pill = Pill("模型：本地规则引擎")
-        layout.addWidget(self.model_dot)
-        layout.addWidget(self.model_pill)
+        bar.add(self.model_dot, ToolbarRow.HIGH)
+        bar.add(self.model_pill, ToolbarRow.HIGH)
 
         self.sync_pill = Pill("分析时间：暂无")
-        layout.addWidget(self.sync_pill)
-        layout.addStretch(1)
+        bar.add(self.sync_pill, ToolbarRow.NORMAL)
+        bar.add_stretch()
 
         self.theme_bar = SegmentBar(
             [(label, key) for key, label in THEME_LABELS],
@@ -233,24 +239,24 @@ class TitleBar(QFrame):
         )
         self.theme_bar.setToolTip("外观主题：浅黑 / 浅白 / 浅蓝（切换立即生效并保存）")
         self.theme_bar.selected.connect(lambda key: window.context.apply_theme(str(key)))
-        layout.addWidget(self.theme_bar)
+        bar.add(self.theme_bar, ToolbarRow.HIGH)
 
         self.sync_button = QPushButton("拉取仓库数据")
         self.sync_button.setToolTip("从你自建的数据仓库拉取最新数据并导入（软件内不爬取）")
         self.sync_button.clicked.connect(lambda: window.context.sync_data_repo())
-        layout.addWidget(self.sync_button)
+        bar.add(self.sync_button, ToolbarRow.NORMAL)
 
         self.chat_button = QPushButton("AI 咨询")
         self.chat_button.setCheckable(True)
         self.chat_button.setChecked(True)
         self.chat_button.setToolTip("在右侧常驻显示 / 隐藏 AI 咨询面板（任意页面都能提问）")
         self.chat_button.toggled.connect(window.toggle_chat_panel)
-        layout.addWidget(self.chat_button)
+        bar.add(self.chat_button, ToolbarRow.NORMAL)
 
         self.analyze_button = QPushButton("一键全量分析")
         self.analyze_button.setObjectName("PrimaryButton")
         self.analyze_button.clicked.connect(lambda: window.context.run_analysis())
-        layout.addWidget(self.analyze_button)
+        bar.add(self.analyze_button, ToolbarRow.REQUIRED)
 
     def refresh(self) -> None:
         context = self.window_ref.context
@@ -266,6 +272,9 @@ class TitleBar(QFrame):
 
 
 class MainWindow(QMainWindow):
+    #: 窗口最小高度：页面内容可纵向滚动，保证基本可用即可
+    MIN_HEIGHT = 620
+
     def __init__(self, context: AppContext) -> None:
         super().__init__()
         self.context = context
@@ -283,6 +292,7 @@ class MainWindow(QMainWindow):
 
         self._on_metrics_updated(context.load_latest_metrics())
         self.refresh_status()
+        self._sync_minimum_width()
         if not context.metrics:
             self._show_status("欢迎使用：请先点击顶部「立即同步数据」，再执行分析。")
 
@@ -300,7 +310,7 @@ class MainWindow(QMainWindow):
             width = max(900, min(width, available.width() - 40))
             height = max(620, min(height, available.height() - 60))
         self.resize(width, height)
-        self.setMinimumSize(900, 620)
+        # 最小尺寸在 _build_layout 之后由 _sync_minimum_width() 按实际布局需求设置
 
     def _build_pages(self) -> None:
         self.dashboard_page = DashboardPage(self.context)
@@ -309,6 +319,7 @@ class MainWindow(QMainWindow):
         self.consulting_page = ConsultingPage(self.context)
         self.drama_page = DramaPage(self.context)
         self.data_page = DataPage(self.context)
+        self.skills_page = SkillsPage(self.context)
         self.settings_page = SettingsPage(self.context)
         self.pages = (
             self.dashboard_page,
@@ -317,6 +328,7 @@ class MainWindow(QMainWindow):
             self.consulting_page,
             self.drama_page,
             self.data_page,
+            self.skills_page,
             self.settings_page,
         )
 
@@ -345,13 +357,17 @@ class MainWindow(QMainWindow):
 
         self.workspace = QSplitter(Qt.Horizontal)
         self.workspace.setChildrenCollapsible(False)
+        self.workspace.setHandleWidth(6)  # 加宽拖动手柄，便于抓取与识别方向
         self.workspace.addWidget(self.stack)
+        # 放开页面栈的最小宽度：否则它会把 AI 面板顶在最小宽度上，
+        # 表现为「往右拖不动、往左拖没反应」——页面内容超出时用滚动条查看即可。
+        self.stack.setMinimumWidth(520)
         self.chat_panel = AiChatPanel(self.context, compact=True)
-        self.chat_panel.setMinimumWidth(300)
+        self.chat_panel.setMinimumWidth(300)  # 留出双向拖动空间
         self.workspace.addWidget(self.chat_panel)
         self.workspace.setStretchFactor(0, 1)
         self.workspace.setStretchFactor(1, 0)
-        self.workspace.setSizes([980, 380])
+        self._splitter_ready = False
         layout.addWidget(self.workspace, 1)
         outer.addWidget(body, 1)
         self.setCentralWidget(central)
@@ -360,13 +376,51 @@ class MainWindow(QMainWindow):
         self._build_status_bar()
 
     # ------------------------------------------------------------------ #
+    def _apply_default_splitter(self) -> None:
+        """设定「页面区 : AI 咨询面板」的初始宽度（默认面板 380px）。"""
+        if self.workspace.count() < 2:
+            return
+        total = self.workspace.width() or (self.width() - NAV_WIDTH - 32)
+        panel_width = 380 if total >= 1000 else 300
+        panel_width = max(300, min(panel_width, max(300, total - 520)))
+        self.workspace.setSizes([max(520, total - panel_width), panel_width])
+
+    def _minimum_window_width(self) -> int:
+        """窗口最小宽度 = 侧栏 + 页面区最小宽 +（显示时）AI 面板最小宽 + 拖动手柄。
+
+        因此当右侧 AI 咨询面板已经被拖到最小时，窗口就无法继续缩小，
+        页面内容与顶部工具栏不会被压缩变形。
+        """
+        width = NAV_WIDTH + self.stack.minimumWidth()
+        if not self.chat_panel.isHidden():
+            width += self.chat_panel.minimumWidth() + self.workspace.handleWidth()
+        return width
+
+    def _sync_minimum_width(self) -> None:
+        """应用最小窗口尺寸（屏幕过小时不超出屏幕可用区，避免窗口大于屏幕）。"""
+        minimum = self._minimum_window_width()
+        screen = QApplication.primaryScreen()
+        if screen is not None:
+            available = screen.availableGeometry()
+            minimum = min(minimum, max(720, available.width() - 40))
+        self.setMinimumSize(minimum, self.MIN_HEIGHT)
+
+    def resizeEvent(self, event) -> None:  # noqa: ANN001 - Qt 命名
+        super().resizeEvent(event)
+        # 首次拿到真实宽度后再分配：布局未完成时 setSizes 会被忽略
+        if not self._splitter_ready and self.workspace.width() > 0:
+            self._splitter_ready = True
+            QTimer.singleShot(0, self._apply_default_splitter)
+
     def toggle_chat_panel(self, visible: bool) -> None:
         """显示 / 隐藏右侧常驻 AI 咨询面板（顶栏「AI 咨询」开关）。"""
         self.chat_panel.setVisible(visible)
         if visible:
             sizes = self.workspace.sizes()
-            if sizes[1] < 300:
-                self.workspace.setSizes([max(520, sizes[0] + sizes[1] - 380), 380])
+            if sizes[1] < 340:
+                self.workspace.setSizes([max(420, sizes[0] + sizes[1] - 380), 380])
+        # 面板显隐会改变所需最小宽度：收起时允许窗口更窄，打开时收紧下限
+        self._sync_minimum_width()
         self.context.status_message.emit(
             "AI 咨询面板已" + ("打开，可在当前页面直接提问" if visible else "收起")
         )

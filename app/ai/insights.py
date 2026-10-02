@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 from datetime import date
 from typing import Any, Callable
@@ -16,6 +17,7 @@ from app.db.repository import (
     latest_analysis,
     save_report,
 )
+from app.skills import build_skill_prompt
 
 logger = get_logger(__name__)
 
@@ -200,8 +202,15 @@ class InsightService:
         history: list[dict[str, str]] | None = None,
         session_id: int | None = None,
         force_local: bool = False,
+        skills: list[Any] | None = None,
+        toolbox: Any | None = None,
+        max_tool_rounds: int = 3,
     ) -> dict[str, Any]:
-        """自由问答：问题 + 数据上下文 → 回答（同时写入会话历史）。"""
+        """自由问答：问题 + 数据上下文 + 已启用技能/工具 → 回答（并写入会话历史）。
+
+        - ``skills``：用户启用的技能（``app.skills.Skill``），其提示词注入 system prompt；
+        - ``toolbox``：MCP 工具集合（``app.mcp.McpToolbox``），提供时启用 function calling 循环。
+        """
         question = (question or "").strip()
         if not question:
             return {"content": "请输入问题。", "is_fallback": True, "provider": "local", "model": "rule-engine"}
@@ -211,15 +220,115 @@ class InsightService:
             session_id = create_chat_session(self.db_url, title=question[:30])
         add_chat_message(self.db_url, session_id, "user", question)
 
-        result = self._generate(
-            "chat",
-            P.chat_messages(metrics, question, history),
-            lambda: P.local_answer(metrics, question),
-            metrics,
-            force_local,
+        # 技能提示词 + 可用工具说明 → 追加 system 消息
+        extra_system: list[str] = []
+        skill_text = build_skill_prompt(list(skills or []))
+        if skill_text:
+            extra_system.append(skill_text)
+        tool_specs = list(toolbox.specs()) if toolbox is not None else []
+        if tool_specs:
+            extra_system.append(
+                "【可用外部工具】你可以调用以下工具获取更精确的实时数据："
+                f"{toolbox.describe()}。当问题需要具体数据（作品明细、评论样本、最新指标）时，"
+                "优先调用工具而不是凭上下文推测；拿到工具结果后再给出结论。"
+            )
+
+        content = ""
+        provider, model, is_fallback = "local", "rule-engine", True
+        error = ""
+        tool_trace: list[dict[str, Any]] = []
+
+        client = self.client
+        if force_local or not client.is_available:
+            content = P.local_answer(metrics, question)
+        else:
+            try:
+                content, provider, model, is_fallback, tool_trace = self._chat_with_tools(
+                    metrics, question, history, extra_system, tool_specs, toolbox, max_tool_rounds
+                )
+            except LLMError as exc:
+                error = str(exc)
+                logger.error("问答失败，回退本地规则: %s", exc)
+                content = (
+                    P.local_answer(metrics, question)
+                    + f"\n\n> ⚠️ 大模型调用失败，已回退本地规则：{exc}"
+                )
+
+        add_chat_message(self.db_url, session_id, "assistant", content, bool(is_fallback))
+        return {
+            "content": content,
+            "provider": provider,
+            "model": model,
+            "is_fallback": is_fallback,
+            "error": error,
+            "report_type": "chat",
+            "session_id": session_id,
+            "tool_trace": tool_trace,
+        }
+
+    # ------------------------------------------------------------------ #
+    def _chat_with_tools(
+        self,
+        metrics: dict[str, Any],
+        question: str,
+        history: list[dict[str, str]] | None,
+        extra_system: list[str],
+        tool_specs: list[dict[str, Any]],
+        toolbox: Any | None,
+        max_rounds: int,
+    ) -> tuple[str, str, str, bool, list[dict[str, Any]]]:
+        """带工具调用的问答循环。
+
+        模型若返回 ``tool_calls``，就本地执行（MCP）并把结果回传，最多循环
+        ``max_rounds`` 轮；超出后强制模型基于已有结果收尾。
+        """
+        messages = P.chat_messages(metrics, question, history, extra_system)
+        trace: list[dict[str, Any]] = []
+        result = None
+
+        for _round in range(max(1, max_rounds)):
+            result = self.client.chat(messages, tools=tool_specs or None)
+            if not result.tool_calls:
+                return result.content, result.provider, result.model, False, trace
+
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": result.content or "",
+                    "tool_calls": result.tool_calls,
+                }
+            )
+            for call in result.tool_calls:
+                function = call.get("function") or {}
+                name = str(function.get("name") or "")
+                raw_arguments = function.get("arguments") or "{}"
+                try:
+                    arguments = (
+                        json.loads(raw_arguments)
+                        if isinstance(raw_arguments, str)
+                        else dict(raw_arguments)
+                    )
+                except (ValueError, TypeError):
+                    arguments = {}
+                output = toolbox.call(name, arguments) if toolbox is not None else "（未配置工具执行器）"
+                logger.info("工具调用 %s(%s) 返回 %d 字符", name, arguments, len(output))
+                trace.append({"tool": name, "arguments": arguments, "output": output[:600]})
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": call.get("id") or name,
+                        "content": output,
+                    }
+                )
+
+        # 达到轮数上限：基于已有工具结果收尾，不再提供工具
+        final = self.client.chat(
+            messages
+            + [
+                {
+                    "role": "user",
+                    "content": "请基于以上工具返回的结果直接给出最终回答，不要再调用工具。",
+                }
+            ]
         )
-        add_chat_message(
-            self.db_url, session_id, "assistant", result["content"], bool(result["is_fallback"])
-        )
-        result["session_id"] = session_id
-        return result
+        return final.content, final.provider, final.model, False, trace

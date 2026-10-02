@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -58,6 +58,10 @@ class StatusDot(QLabel):
         self.setObjectName("StatusDot")
         self.setFixedSize(6, 6)
         self.set_color(color)
+
+    def sizeHint(self) -> QSize:  # noqa: N802 - Qt 命名约定
+        """固定为 6×6，避免与布局的最小尺寸产生 1px 差值。"""
+        return QSize(6, 6)
 
     def set_color(self, color: str) -> None:
         self.setStyleSheet(f"background-color: {color}; border-radius: 3px;")

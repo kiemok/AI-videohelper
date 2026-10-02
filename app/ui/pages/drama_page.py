@@ -39,6 +39,8 @@ from app.ui.widgets.cards import (
     muted_label,
 )
 from app.ui.widgets.tables import Column, DictTableModel, configure_table
+from app.ui.widgets.responsive import PageScrollArea, ResponsiveSplitter
+from app.ui.widgets.toolbar import ToolbarRow
 
 STORYBOARD_COLUMNS = [
     Column("scene_no", "镜号", 56, None, Qt.AlignCenter),
@@ -60,25 +62,38 @@ class DramaPage(QWidget):
 
     # ------------------------------------------------------------------ #
     def _build(self) -> None:
-        root = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        scroll = PageScrollArea()
+        container = QWidget()
+        root = QVBoxLayout(container)
         root.setContentsMargins(16, 12, 16, 12)
         root.setSpacing(12)
 
-        header = QHBoxLayout()
-        title = QLabel("AI 短剧工坊")
+        header = ToolbarRow()
+        title = header.add(QLabel("AI 短剧工坊"), ToolbarRow.REQUIRED)
         title.setObjectName("PageTitle")
-        header.addWidget(title)
-        header.addWidget(muted_label("梗概 → 大纲 → 剧本 → 分镜（含多模态提示词）· 多模态能力已预留接口"))
-        header.addStretch(1)
-        self.status_label = muted_label("")
-        header.addWidget(self.status_label)
-        root.addLayout(header)
+        header.add(
+            muted_label("梗概 → 大纲 → 剧本 → 分镜（含多模态提示词）· 多模态能力已预留接口"),
+            ToolbarRow.LOW,
+        )
+        header.add_stretch()
+        self.status_label = header.add(muted_label(""), ToolbarRow.NORMAL)
+        root.addWidget(header)
 
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = ResponsiveSplitter(
+            threshold=820,
+            horizontal_sizes=[360, 1000],
+            vertical_sizes=[520, 660],
+            stacked_min_height=1200,
+        )
         splitter.addWidget(self._build_form_card())
         splitter.addWidget(self._build_workspace())
-        splitter.setSizes([360, 1000])
         root.addWidget(splitter, 1)
+
+        scroll.setWidget(container)
+        outer.addWidget(scroll)
 
     def _build_form_card(self) -> QWidget:
         card = ModuleCard("短剧项目")

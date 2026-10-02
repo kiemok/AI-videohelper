@@ -42,6 +42,7 @@ from app.db.repository import (
 )
 from app.ui.context import AppContext
 from app.ui.theme import COLORS
+from app.ui.widgets.toolbar import ToolbarRow
 from app.ui.widgets.cards import (
     Badge,
     ModuleCard,
@@ -173,31 +174,26 @@ class DataPage(QWidget):
         outer.addWidget(scroll)
 
     def _build_toolbar(self) -> QWidget:
-        bar = QWidget()
-        layout = QHBoxLayout(bar)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
-
-        title = QLabel("数据仓库与导入")
+        bar = ToolbarRow(spacing=8)
+        title = bar.add(QLabel("数据仓库与导入"), ToolbarRow.REQUIRED)
         title.setObjectName("PageTitle")
-        layout.addWidget(title)
         desc = muted_label("仓库拉取 → 融合导入")
         desc.setWordWrap(False)
-        layout.addWidget(desc)
-        layout.addStretch(1)
+        bar.add(desc, ToolbarRow.LOW)
+        bar.add_stretch()
 
         self.sync_button = QPushButton("拉取 / 更新数据")
         self.sync_button.setObjectName("PrimaryButton")
         self.sync_button.clicked.connect(self.context.sync_data_repo)
-        layout.addWidget(self.sync_button)
+        bar.add(self.sync_button, ToolbarRow.REQUIRED)
 
         self.local_button = QPushButton("仅导入本地目录")
         self.local_button.clicked.connect(self.context.import_repo_local)
-        layout.addWidget(self.local_button)
+        bar.add(self.local_button, ToolbarRow.HIGH)
 
         self.template_button = QPushButton("生成数据模板")
         self.template_button.clicked.connect(self.context.write_repo_templates)
-        layout.addWidget(self.template_button)
+        bar.add(self.template_button, ToolbarRow.NORMAL)
         return bar
 
     # ------------------------------------------------------------------ #

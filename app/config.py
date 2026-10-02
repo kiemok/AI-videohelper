@@ -115,6 +115,39 @@ class DataRepoSettings:
 
 
 @dataclass
+class McpServerSettings:
+    """MCP（Model Context Protocol）服务器配置。
+
+    支持两种传输方式：
+
+    - ``stdio``：本地命令启动的服务器（例如 ``npx -y @modelcontextprotocol/server-filesystem``）
+    - ``sse``  ：远程 HTTP/SSE 服务器（填写 url 即可）
+
+    只有标记为启用（``enabled=True``）的服务器，其工具才会出现在 AI 咨询的可用工具里。
+    """
+
+    name: str = ""  # 显示名，同时作为工具名前缀
+    enabled: bool = False
+    transport: str = "stdio"  # stdio / sse
+    command: str = ""  # stdio：可执行命令（python / npx / uvx …）
+    args: list[str] = field(default_factory=list)
+    env: dict[str, str] = field(default_factory=dict)
+    url: str = ""  # sse：服务器地址
+    timeout: int = 30  # 单次调用超时（秒）
+
+    def is_configured(self) -> bool:
+        if self.transport == "sse":
+            return bool(self.url.strip())
+        return bool(self.command.strip())
+
+    def describe(self) -> str:
+        if self.transport == "sse":
+            return f"SSE · {self.url}"
+        command = " ".join([self.command, *self.args[:3]]).strip()
+        return f"stdio · {command}"
+
+
+@dataclass
 class AppSettings:
     """应用级配置。"""
 
@@ -126,6 +159,11 @@ class AppSettings:
     theme: str = "dark"  # 外观主题：dark（浅黑）/ light（浅白）/ blue（浅蓝）
     llm: LLMSettings = field(default_factory=LLMSettings)
     data_repo: DataRepoSettings = field(default_factory=DataRepoSettings)
+    skills_dir: str = ""  # 自定义技能目录，留空 = <项目根>/skills
+    skills_enabled: list[str] = field(default_factory=list)  # 已启用的技能 slug
+    mcp_servers: list[McpServerSettings] = field(default_factory=list)  # MCP 服务器列表
+    #: 数据看板「作品表现 TOP」区域高度占比（0.2~0.8）；上下拖动分隔条调整后自动保存
+    dashboard_top_ratio: float = 0.45
 
     def resolved_db_url(self) -> str:
         if self.db_url.strip():
@@ -134,6 +172,8 @@ class AppSettings:
 
 
 _NESTED_TYPES.update({"llm": LLMSettings, "data_repo": DataRepoSettings})
+#: 嵌套的 dataclass 列表（JSON 中为对象数组）
+_NESTED_LIST_TYPES: dict[str, type] = {"mcp_servers": McpServerSettings}
 
 
 def default_sqlite_url() -> str:
@@ -155,8 +195,15 @@ def _build_dataclass(cls: type, data: dict[str, Any]) -> Any:
             continue
         value = data[f.name]
         nested = _NESTED_TYPES.get(f.name)
+        nested_list = _NESTED_LIST_TYPES.get(f.name)
         if nested is not None:
             kwargs[f.name] = _build_dataclass(nested, value or {})
+        elif nested_list is not None:
+            kwargs[f.name] = [
+                _build_dataclass(nested_list, item)
+                for item in (value or [])
+                if isinstance(item, dict)
+            ]
         else:
             kwargs[f.name] = value
     # dataclass 自身负责补齐缺少字段的默认值

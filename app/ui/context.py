@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from datetime import date
 from typing import Any
 
@@ -31,6 +32,7 @@ class AppContext(QObject):
     settings_changed = Signal()  # 配置变化（大模型/数据库）
     theme_changed = Signal(str)  # 外观主题切换（浅黑/浅白/浅蓝）
     chat_message = Signal(str, str, bool)  # AI 对话消息（role, content, is_fallback）
+    skills_changed = Signal()  # 技能 / MCP 工具配置变化（咨询面板刷新状态）
     status_message = Signal(str)  # 状态栏提示
 
     def __init__(self) -> None:
@@ -46,6 +48,7 @@ class AppContext(QObject):
         # AI 咨询会话：右侧常驻面板与「AI 决策助手」页共用同一份上下文
         self.chat_history: list[dict[str, str]] = []
         self.chat_session_id: int | None = None
+        self._toolbox_cache: Any | None = None  # MCP 工具集合缓存（配置变化时失效）
         self.scheduler = DailyScheduler(self)
         self.scheduler.due.connect(self._on_schedule_due)
         if self.settings.schedule_enabled:
@@ -106,6 +109,96 @@ class AppContext(QObject):
             return f"APScheduler：运行中（每日 {self.settings.schedule_time}）"
         return "APScheduler：未启用"
 
+    # ------------------------------------------------------------------ #
+    # 自定义技能（Skill）与 MCP 工具
+    # ------------------------------------------------------------------ #
+    def skills_directory(self) -> Any:
+        """技能目录（默认 <项目根>/skills）。"""
+        from pathlib import Path
+
+        from app.skills import default_skills_dir
+
+        raw = (self.settings.skills_dir or "").strip()
+        return Path(raw) if raw else default_skills_dir()
+
+    def all_skills(self) -> list[Any]:
+        """加载技能目录下的全部技能（目录不存在时自动写入内置示例）。"""
+        from app.skills import ensure_builtin_skills, load_skills
+
+        directory = self.skills_directory()
+        try:
+            if not directory.exists():
+                ensure_builtin_skills(directory)
+            return load_skills(directory)
+        except OSError as exc:
+            logger.warning("加载技能失败：%s", exc)
+            return []
+
+    def enabled_skills(self) -> list[Any]:
+        """已勾选启用的技能（注入咨询的 system prompt）。"""
+        enabled = set(self.settings.skills_enabled or [])
+        return [skill for skill in self.all_skills() if skill.slug in enabled]
+
+    def set_skill_enabled(self, slug: str, enabled: bool) -> None:
+        current = set(self.settings.skills_enabled or [])
+        current.add(slug) if enabled else current.discard(slug)
+        self.settings.skills_enabled = sorted(current)
+        save_settings(self.settings)
+        self.skills_changed.emit()
+
+    def save_skill(self, skill: Any) -> Any:
+        from app.skills import save_skill
+
+        path = save_skill(skill, self.skills_directory())
+        self.skills_changed.emit()
+        return path
+
+    def delete_skill(self, skill: Any) -> bool:
+        from app.skills import delete_skill
+
+        removed = delete_skill(skill)
+        if removed:
+            self.set_skill_enabled(skill.slug, False)
+        self.skills_changed.emit()
+        return removed
+
+    def mcp_servers(self) -> list[Any]:
+        return list(self.settings.mcp_servers or [])
+
+    def save_mcp_servers(self, servers: list[Any]) -> None:
+        self.settings.mcp_servers = list(servers)
+        save_settings(self.settings)
+        self._toolbox_cache = None
+        self.skills_changed.emit()
+
+    def build_toolbox(self, use_cache: bool = True) -> Any:
+        """汇总已启用 MCP 服务器的工具（带缓存，配置变化时自动失效）。"""
+        from app.mcp import collect_toolbox
+
+        if use_cache and self._toolbox_cache is not None:
+            return self._toolbox_cache
+        box = collect_toolbox(self.mcp_servers())
+        if use_cache:
+            self._toolbox_cache = box
+        return box
+
+    def refresh_toolbox(self) -> Any:
+        """强制重新连接 MCP 服务器并刷新工具集合。"""
+        self._toolbox_cache = None
+        return self.build_toolbox()
+
+    def toolbox_summary(self) -> str:
+        """MCP 工具概要（不主动连接服务器，避免界面卡顿）。"""
+        box = self._toolbox_cache
+        if box is not None:
+            return box.describe()
+        configured = [
+            server for server in self.mcp_servers() if server.enabled and server.is_configured()
+        ]
+        if configured:
+            return f"工具未连接（{len(configured)} 个 MCP 服务器已启用）"
+        return "未配置外部工具"
+
     def overview(self) -> dict[str, Any]:
         return data_overview(self.db_url)
 
@@ -136,6 +229,16 @@ class AppContext(QObject):
         if theme_changed:
             self.apply_theme(settings.theme, persist=False)
         self.settings_changed.emit()
+
+    def save_preference(self, **changes: Any) -> None:
+        """保存轻量界面偏好（如看板 TOP 区域高度占比）：只更新字段并写盘。
+
+        与 ``apply_settings`` 的区别：不重建数据库、不动主题与调度，适合拖动这类高频操作。
+        """
+        if not changes:
+            return
+        self.settings = dataclasses.replace(self.settings, **changes)
+        save_settings(self.settings)
         self.status_message.emit("配置已保存")
 
     # ------------------------------------------------------------------ #
@@ -278,6 +381,8 @@ class AppContext(QObject):
                 list(self.chat_history),
                 self.chat_session_id,
                 force_local,
+                self.enabled_skills(),
+                self.build_toolbox(),
             )
 
         def done(result: dict[str, Any]) -> None:

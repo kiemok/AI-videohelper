@@ -1,37 +1,35 @@
 """数据看板页（对齐设计稿 `_1 数据看板`）。
 
 结构：顶部工具条（平台/时间范围分段 + 刷新 + 导出）→ KPI 四卡（带迷你趋势）
-→ 双平台趋势（左） + 平台流量与价值转化漏斗（右）
-→ 异常拐点检测日志（左） + AI 快速创作洞察摘要（右）→ 作品表现 TOP。
+→ 双平台趋势（左） + 平台流量与价值转化漏斗（右）→ 作品表现 TOP。
+
+说明：AI 洞察摘要已移至「AI 决策助手」页（两页共用同一组件），看板聚焦数据本身。
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
-    QListWidget,
-    QListWidgetItem,
     QPushButton,
     QSplitter,
     QTableView,
-    QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
 
 from app.config import platform_label
 from app.ui.context import AppContext
-from app.ui.theme import COLORS, tone_color
+from app.ui.theme import COLORS
+from app.ui.widgets.responsive import PageScrollArea, ResponsiveKpiRow, ResponsiveSplitter
+from app.ui.widgets.toolbar import ToolbarRow
 from app.ui.widgets.cards import (
     KpiCard,
     ModuleCard,
     SegmentBar,
-    build_kpi_row,
     muted_label,
 )
 from app.ui.widgets.charts import FunnelBars, TrendChart
@@ -47,25 +45,22 @@ TOP_COLUMNS = [
     Column("health_score", "健康度", 70, lambda v: f"{float(v):.1f}", Qt.AlignRight | Qt.AlignVCenter),
 ]
 
-_KIND_TONE = {
-    "spike": ("异常放量", "coral"),
-    "drop": ("衰减预警", "amber"),
-    "recover": ("长尾回温", "green"),
-    "fade": ("增长转负", "violet"),
-}
-
-
 class DashboardPage(QWidget):
     def __init__(self, context: AppContext, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.context = context
+        self._top_splitter_ready = False
         self._build()
         context.metrics_updated.connect(self.render)
-        context.report_updated.connect(self._render_brief)
 
     # ------------------------------------------------------------------ #
     def _build(self) -> None:
-        root = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        scroll = PageScrollArea()
+        container = QWidget()
+        root = QVBoxLayout(container)
         root.setContentsMargins(16, 12, 16, 12)
         root.setSpacing(12)
         root.addWidget(self._build_toolbar())
@@ -76,9 +71,14 @@ class DashboardPage(QWidget):
             KpiCard("当日净增粉丝 · NET GROWTH", "人", accent=COLORS["coral"]),
             KpiCard("传播健康度 · HEALTH SCORE", "/100", accent=COLORS["green"]),
         ]
-        root.addWidget(build_kpi_row(self.kpi_cards, columns=4))
+        root.addWidget(ResponsiveKpiRow(self.kpi_cards, wide_columns=4, narrow_columns=2, threshold=820))
 
-        middle = QSplitter(Qt.Horizontal)
+        middle = ResponsiveSplitter(
+            threshold=780,
+            horizontal_sizes=[900, 460],
+            vertical_sizes=[420, 470],
+            stacked_min_height=930,
+        )
         self.trend_card = ModuleCard("双平台播放与互动趋势")
         self.trend_card.add_widget(muted_label("每日累计快照采样｜珊瑚点 = 异常拐点｜紫色虚线 = 传播健康度"))
         self.trend_chart = TrendChart()
@@ -92,26 +92,7 @@ class DashboardPage(QWidget):
         self.funnel_card.add_widget(muted_label("累计口径：曝光 → 点赞 → 深度互动 → 关注转化"))
         middle.addWidget(self.funnel_card)
         middle.setSizes([900, 460])
-        root.addWidget(middle, 3)
-
-        bottom = QSplitter(Qt.Horizontal)
-        self.anomaly_card = ModuleCard("近期数据异常与拐点检测日志", "实时监控")
-        self.anomaly_list = QListWidget()
-        self.anomaly_list.setObjectName("LogList")
-        self.anomaly_list.setWordWrap(True)
-        self.anomaly_card.add_widget(self.anomaly_list, 1)
-        bottom.addWidget(self.anomaly_card)
-
-        self.brief_card = ModuleCard("AI 快速创作洞察摘要")
-        self.brief_view = QTextBrowser()
-        self.brief_card.add_widget(self.brief_view, 1)
-        self.brief_action = QPushButton("进入 AI 助手深入解读 →")
-        self.brief_action.setObjectName("AiButton")
-        self.brief_action.clicked.connect(self._goto_ai)
-        self.brief_card.add_widget(self.brief_action)
-        bottom.addWidget(self.brief_card)
-        bottom.setSizes([740, 620])
-        root.addWidget(bottom, 2)
+        # 不直接加入页面：它与「作品表现 TOP」一起放进可上下拖动的 body_splitter
 
         self.top_card = ModuleCard("作品表现 TOP")
         self.top_model = DictTableModel(TOP_COLUMNS)
@@ -119,17 +100,71 @@ class DashboardPage(QWidget):
         self.top_table.setModel(self.top_model)
         configure_table(self.top_table, row_height=30, stretch_column=1, platform_column=0)
         self.top_card.add_widget(self.top_table, 1)
-        root.addWidget(self.top_card, 2)
+        self.top_card.setMinimumHeight(150)  # 缩放下限：不会被拖到看不见内容
+
+        # 上：趋势 + 漏斗；下：作品表现 TOP
+        # 中间的分隔条可**上下拖动**，用来缩放 TOP 区域高度（占比自动记住）
+        middle.setMinimumHeight(220)  # 上半区缩放下限（趋势图仍可用）
+        self.body_splitter = QSplitter(Qt.Vertical)
+        self.body_splitter.setObjectName("BodySplitter")
+        self.body_splitter.setChildrenCollapsible(False)
+        self.body_splitter.setHandleWidth(6)
+        self.body_splitter.setMinimumHeight(560)
+        self.body_splitter.addWidget(middle)
+        self.body_splitter.addWidget(self.top_card)
+        self.body_splitter.setStretchFactor(0, 1)
+        self.body_splitter.setStretchFactor(1, 1)
+        self.body_splitter.splitterMoved.connect(self._on_top_splitter_moved)
+        self._top_save_timer = QTimer(self)
+        self._top_save_timer.setSingleShot(True)
+        self._top_save_timer.setInterval(600)
+        self._top_save_timer.timeout.connect(self._persist_top_ratio)
+        root.addWidget(self.body_splitter, 1)
+
+        scroll.setWidget(container)
+        outer.addWidget(scroll)
+
+    # ------------------------------------------------------------------ #
+    # 作品表现 TOP 区域缩放（上下拖动分隔条，占比持久化）
+    # ------------------------------------------------------------------ #
+    def resizeEvent(self, event) -> None:  # noqa: ANN001 - Qt 命名
+        super().resizeEvent(event)
+        # 首次拿到真实高度后再按保存的比例分配（布局未完成时 setSizes 会被忽略）
+        if not self._top_splitter_ready and self.body_splitter.height() > 0:
+            self._top_splitter_ready = True
+            QTimer.singleShot(0, self._apply_saved_top_ratio)
+
+    def _apply_saved_top_ratio(self) -> None:
+        """按配置里的占比恢复 TOP 区域高度（限制在 20%~80%）。"""
+        total = self.body_splitter.height()
+        if total <= 0:
+            return
+        ratio = min(0.8, max(0.2, float(self.context.settings.dashboard_top_ratio or 0.45)))
+        top = int(total * ratio)
+        self.body_splitter.setSizes([total - top, top])
+
+    def _on_top_splitter_moved(self, _position: int) -> None:
+        """拖动过程中防抖：松手 600ms 后再写配置，避免频繁写盘。"""
+        self._top_save_timer.start()
+
+    def _persist_top_ratio(self) -> None:
+        sizes = self.body_splitter.sizes()
+        total = sum(sizes)
+        if total <= 0:
+            return
+        ratio = round(sizes[1] / total, 4)
+        current = float(self.context.settings.dashboard_top_ratio or 0.45)
+        if abs(ratio - current) < 0.01:
+            return
+        self.context.save_preference(dashboard_top_ratio=ratio)
+        self.context.status_message.emit(
+            f"作品表现 TOP 区域高度已调整为 {ratio:.0%}（下次启动沿用；拖动分隔条可再调）"
+        )
 
     def _build_toolbar(self) -> QWidget:
-        bar = QWidget()
-        layout = QHBoxLayout(bar)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
-
-        title = QLabel("数据看板")
+        bar = ToolbarRow(spacing=10)
+        title = bar.add(QLabel("数据看板"), ToolbarRow.REQUIRED)
         title.setObjectName("PageTitle")
-        layout.addWidget(title)
 
         self.platform_bar = SegmentBar(
             [
@@ -140,26 +175,28 @@ class DashboardPage(QWidget):
             current="",
         )
         self.platform_bar.selected.connect(self._on_platform_changed)
-        layout.addWidget(self.platform_bar)
+        bar.add(self.platform_bar, ToolbarRow.HIGH)
 
         self.range_bar = SegmentBar([("近 7 天", 7), ("近 30 天", 30), ("近 90 天", 90)], current=30)
-        layout.addWidget(self.range_bar)
+        bar.add(self.range_bar, ToolbarRow.HIGH)
 
         self.date_hint = muted_label("尚未载入分析结果")
-        layout.addWidget(self.date_hint, 1)
+        self.date_hint.setWordWrap(False)
+        bar.add(self.date_hint, ToolbarRow.LOW)
+        bar.add_stretch()
 
         self.refresh_button = QPushButton("刷新分析结果")
         self.refresh_button.clicked.connect(self._run_analysis)
-        layout.addWidget(self.refresh_button)
+        bar.add(self.refresh_button, ToolbarRow.HIGH)
 
         self.export_button = QPushButton("导出分析报表")
         self.export_button.clicked.connect(self.context.export_analysis)
-        layout.addWidget(self.export_button)
+        bar.add(self.export_button, ToolbarRow.NORMAL)
 
         self.analyze_button = QPushButton("一键全量分析")
         self.analyze_button.setObjectName("PrimaryButton")
         self.analyze_button.clicked.connect(self._run_analysis)
-        layout.addWidget(self.analyze_button)
+        bar.add(self.analyze_button, ToolbarRow.REQUIRED)
         return bar
 
     # ------------------------------------------------------------------ #
@@ -170,11 +207,6 @@ class DashboardPage(QWidget):
     def _on_platform_changed(self, _key: object) -> None:
         self._run_analysis()
 
-    def _goto_ai(self) -> None:
-        window = self.window()
-        if hasattr(window, "nav"):
-            window.nav.setCurrentRow(2)
-
     # ------------------------------------------------------------------ #
     def render(self, metrics: dict[str, Any]) -> None:
         if not metrics:
@@ -182,8 +214,6 @@ class DashboardPage(QWidget):
             self.trend_chart.set_data([])
             self.funnel_bars.set_rows([])
             self.top_model.set_rows([])
-            self.anomaly_list.clear()
-            self._render_brief()
             for card in self.kpi_cards:
                 card.set_data("—")
             return
@@ -248,42 +278,5 @@ class DashboardPage(QWidget):
         self.funnel_bars.set_rows(
             [(row.get("label", ""), int(row.get("value", 0))) for row in (metrics.get("funnel") or [])]
         )
-        self._render_anomalies(metrics)
         self.top_model.set_rows(metrics.get("top_videos") or [])
         self.top_card.set_subtitle(f"按当日新增播放排序｜共 {len(metrics.get('top_videos') or [])} 条")
-        self._render_brief()
-
-    def _render_anomalies(self, metrics: dict[str, Any]) -> None:
-        self.anomaly_list.clear()
-        items = list(metrics.get("anomalies") or [])[:12]
-        if not items:
-            self.anomaly_list.addItem(QListWidgetItem("近 30 天未检测到显著异常拐点"))
-            self.anomaly_card.set_subtitle("实时监控")
-            return
-        for item in items:
-            label, tone = _KIND_TONE.get(str(item.get("kind")), ("异常", "muted"))
-            entry = QListWidgetItem(
-                f"【{label}】{item.get('stat_date')}  {platform_label(str(item.get('platform', '')))}平台  "
-                f"《{item.get('title')}》\n"
-                f"    {item.get('note')}（当日播放 {int(item.get('daily_views', 0)):,}，"
-                f"环比 {item.get('growth_rate')}%）"
-            )
-            entry.setForeground(QColor(tone_color(tone)))
-            self.anomaly_list.addItem(entry)
-        self.anomaly_card.set_subtitle(f"共 {len(items)} 条")
-
-    def _render_brief(self) -> None:
-        report = self.context.latest_brief()
-        if report and report.get("content"):
-            source = (
-                "本地规则引擎"
-                if report.get("is_fallback")
-                else f"{report.get('provider')}/{report.get('model')}"
-            )
-            self.brief_view.setMarkdown(report["content"])
-            self.brief_card.set_subtitle(f"{str(report.get('generated_at'))[:16]}｜{source}")
-        else:
-            self.brief_view.setPlainText(
-                "还没有 AI 洞察：到「AI 决策助手」页点击「智能数据决策简报」生成，结果会自动回显在这里。"
-            )
-            self.brief_card.set_subtitle("")

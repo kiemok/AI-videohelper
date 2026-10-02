@@ -18,6 +18,9 @@ config/*.local.json
 data/
 logs/
 
+# 自定义技能（程序会自动写入内置示例，用户可自由增删，不入库）
+skills/
+
 # IDE
 .idea/
 .vscode/

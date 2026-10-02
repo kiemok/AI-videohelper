@@ -12,8 +12,8 @@ numpy>=1.26             # 数值计算
 requests>=2.31          # HTTP 请求（大模型 API 调用 / 后续爬虫）
 APScheduler>=3.10       # 每日定时任务调度
 python-dateutil>=2.8    # 时间处理
+mcp>=2.0                # MCP 官方 SDK：把外部工具服务器接入 AI 咨询（stdio / SSE）
 
-# 后续阶段（爬虫 / MCP）再启用：
+# 后续阶段再启用：
 # playwright>=1.44      # 动态页面采集（抖音等）
-# mcp>=1.0              # MCP 官方 SDK：预留接入外部工具服务器
 # openpyxl>=3.1         # 数据导出 Excel

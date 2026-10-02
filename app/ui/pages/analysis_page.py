@@ -3,7 +3,6 @@
 - 顶部：平台筛选 + 关键词搜索 + 排序方式
 - KPI：双端监控作品数 / 评论语料库容量 / 全域情感极性均值
 - 作品综合排行（左） ＋ 评论区情感极性与情绪分布（右上） ＋ 核心热词（右下）
-- 底部：作品级异常拐点与 AI 归因
 """
 
 from __future__ import annotations
@@ -26,15 +25,16 @@ from app.config import PLATFORM_LABELS, platform_label
 from app.db.repository import list_videos
 from app.ui.context import AppContext
 from app.ui.theme import COLORS
+from app.ui.widgets.responsive import PageScrollArea, ResponsiveKpiRow, ResponsiveSplitter
+from app.ui.widgets.toolbar import ToolbarRow
 from app.ui.widgets.cards import (
     KpiCard,
     ModuleCard,
     SegmentBar,
-    build_kpi_row,
     muted_label,
 )
 from app.ui.widgets.charts import SentimentBar, TopicCloud
-from app.ui.widgets.tables import ANOMALY_COLUMNS, Column, DictTableModel, configure_table
+from app.ui.widgets.tables import Column, DictTableModel, configure_table
 
 RANK_COLUMNS = [
     Column("platform", "平台", 56),
@@ -65,7 +65,12 @@ class AnalysisPage(QWidget):
 
     # ------------------------------------------------------------------ #
     def _build(self) -> None:
-        root = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        scroll = PageScrollArea()
+        container = QWidget()
+        root = QVBoxLayout(container)
         root.setContentsMargins(16, 12, 16, 12)
         root.setSpacing(12)
         root.addWidget(self._build_toolbar())
@@ -75,9 +80,14 @@ class AnalysisPage(QWidget):
             KpiCard("评论语料库容量", "条", accent=COLORS["violet"]),
             KpiCard("全域评论情感极性均值", "%", accent=COLORS["green"]),
         ]
-        root.addWidget(build_kpi_row(self.kpi_cards, columns=3))
+        root.addWidget(ResponsiveKpiRow(self.kpi_cards, wide_columns=3, narrow_columns=2, threshold=760))
 
-        middle = QSplitter(Qt.Horizontal)
+        middle = ResponsiveSplitter(
+            threshold=780,
+            horizontal_sizes=[880, 460],
+            vertical_sizes=[460, 500],
+            stacked_min_height=1000,
+        )
         self.rank_card = ModuleCard("双平台作品综合排行", "融合数据模型统一视图")
         self.rank_model = DictTableModel(RANK_COLUMNS)
         self.rank_table = QTableView()
@@ -112,52 +122,43 @@ class AnalysisPage(QWidget):
         right.addWidget(self.wordcloud_card)
         right.setSizes([220, 320])
         middle.addWidget(right)
-        middle.setSizes([880, 460])
-        root.addWidget(middle, 3)
+        root.addWidget(middle, 1)
 
-        self.anomaly_card = ModuleCard("作品级异常拐点与 AI 归因")
-        self.anomaly_model = DictTableModel(ANOMALY_COLUMNS)
-        self.anomaly_table = QTableView()
-        self.anomaly_table.setModel(self.anomaly_model)
-        configure_table(self.anomaly_table, row_height=30, stretch_column=2, platform_column=1)
-        self.anomaly_card.add_widget(self.anomaly_table, 1)
-        root.addWidget(self.anomaly_card, 2)
+        scroll.setWidget(container)
+        outer.addWidget(scroll)
 
     def _build_toolbar(self) -> QWidget:
-        bar = QWidget()
-        layout = QHBoxLayout(bar)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
-
-        title = QLabel("内容与评论分析")
+        bar = ToolbarRow(spacing=10)
+        title = bar.add(QLabel("内容与评论分析"), ToolbarRow.REQUIRED)
         title.setObjectName("PageTitle")
-        layout.addWidget(title)
-        layout.addWidget(muted_label("作品多维表现 · 评论情感极性 · 高频词云"))
+        summary = muted_label("作品 · 评论 · 热词")
+        summary.setWordWrap(False)  # 只整体显示或隐藏：不换行、不压缩
+        bar.add(summary, ToolbarRow.LOW)
 
         self.platform_bar = SegmentBar(
             [("全部平台", "")] + [(label, key) for key, label in PLATFORM_LABELS.items()],
             current="",
         )
         self.platform_bar.selected.connect(lambda _key: self._reload())
-        layout.addWidget(self.platform_bar)
+        bar.add(self.platform_bar, ToolbarRow.HIGH)
 
         self.search_edit = QLineEdit()
         self.search_edit.setPlaceholderText("搜索作品标题 / 关键词…")
         self.search_edit.setFixedWidth(220)
         self.search_edit.returnPressed.connect(self._reload)
-        layout.addWidget(self.search_edit)
+        bar.add(self.search_edit, ToolbarRow.NORMAL)
 
         self.sort_bar = SegmentBar([("按播放排序", "views"), ("按点赞排序", "likes")], current="views")
         self.sort_bar.selected.connect(lambda _key: self._reload())
-        layout.addWidget(self.sort_bar)
-        layout.addStretch(1)
+        bar.add(self.sort_bar, ToolbarRow.NORMAL)
+        bar.add_stretch()
 
         self.analyze_button = QPushButton("重新分析")
         self.analyze_button.setObjectName("PrimaryButton")
         self.analyze_button.clicked.connect(
             lambda: self.context.run_analysis(platform=self.platform_bar.current_key() or None)
         )
-        layout.addWidget(self.analyze_button)
+        bar.add(self.analyze_button, ToolbarRow.REQUIRED)
         return bar
 
     # ------------------------------------------------------------------ #
@@ -185,7 +186,6 @@ class AnalysisPage(QWidget):
                 card.set_data("—")
             self.sentiment_bar.set_data({})
             self.wordcloud.set_words([])
-            self.anomaly_model.set_rows([])
             return
 
         span = metrics.get("data_span", {}) or {}
@@ -227,6 +227,3 @@ class AnalysisPage(QWidget):
         keywords = metrics.get("keywords") or []
         self.wordcloud.set_words(keywords)
         self.wordcloud_card.set_subtitle(f"共 {len(keywords)} 个高频词")
-
-        self.anomaly_model.set_rows(metrics.get("anomalies") or [])
-        self.anomaly_card.set_subtitle(f"共 {len(metrics.get('anomalies') or [])} 条拐点")

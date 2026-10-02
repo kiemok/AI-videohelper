@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QPlainTextEdit,
     QPushButton,
-    QSplitter,
     QTextBrowser,
     QVBoxLayout,
     QWidget,
@@ -26,6 +25,8 @@ from PySide6.QtWidgets import (
 
 from app.consulting import CATEGORIES
 from app.ui.context import AppContext
+from app.ui.widgets.responsive import PageScrollArea, ResponsiveSplitter
+from app.ui.widgets.toolbar import ToolbarRow
 from app.ui.widgets.cards import (
     ModuleCard,
     SegmentBar,
@@ -55,26 +56,34 @@ class ConsultingPage(QWidget):
 
     # ------------------------------------------------------------------ #
     def _build(self) -> None:
-        root = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        scroll = PageScrollArea()
+        container = QWidget()
+        root = QVBoxLayout(container)
         root.setContentsMargins(16, 12, 16, 12)
         root.setSpacing(12)
 
-        header = QHBoxLayout()
-        title = QLabel("视频创作咨询")
+        header = ToolbarRow()
+        title = header.add(QLabel("视频创作咨询"), ToolbarRow.REQUIRED)
         title.setObjectName("PageTitle")
-        header.addWidget(title)
-        header.addWidget(
-            muted_label("把数据结论翻译成可执行的创作方案 · 支持账号定位/脚本/标题/增长/商业化")
+        header.add(
+            muted_label("把数据结论翻译成可执行的创作方案 · 支持账号定位/脚本/标题/增长/商业化"),
+            ToolbarRow.LOW,
         )
-        header.addStretch(1)
-        self.status_label = muted_label("")
-        header.addWidget(self.status_label)
-        root.addLayout(header)
+        header.add_stretch()
+        self.status_label = header.add(muted_label(""), ToolbarRow.NORMAL)
+        root.addWidget(header)
 
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = ResponsiveSplitter(
+            threshold=820,
+            horizontal_sizes=[520, 760],
+            vertical_sizes=[560, 620],
+            stacked_min_height=1200,
+        )
         splitter.addWidget(self._build_input_card())
         splitter.addWidget(self._build_output_card())
-        splitter.setSizes([520, 760])
         root.addWidget(splitter, 3)
 
         self.history_card = ModuleCard("历史咨询记录")
@@ -84,6 +93,9 @@ class ConsultingPage(QWidget):
         self.history_list.itemClicked.connect(self._on_history_clicked)
         self.history_card.add_widget(self.history_list, 1)
         root.addWidget(self.history_card, 2)
+
+        scroll.setWidget(container)
+        outer.addWidget(scroll)
 
     def _build_input_card(self) -> QWidget:
         card = ModuleCard("咨询输入")

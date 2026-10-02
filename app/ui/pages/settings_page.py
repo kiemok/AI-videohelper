@@ -28,6 +28,7 @@ from app.config import PROVIDER_PRESETS, AppSettings, LLMSettings, default_sqlit
 from app.ui.context import AppContext
 from app.ui.theme import THEME_LABELS
 from app.ui.widgets.cards import SegmentBar, hint_label
+from app.ui.widgets.toolbar import ToolbarRow
 
 MYSQL_EXAMPLE = "mysql+pymysql://root:密码@127.0.0.1:3306/content_decision?charset=utf8mb4"
 
@@ -70,19 +71,20 @@ class SettingsPage(QWidget):
         root.addWidget(self._build_task_group())
         root.addWidget(self._build_repo_group())
 
-        actions = QWidget()
-        action_layout = QHBoxLayout(actions)
-        action_layout.setContentsMargins(0, 0, 0, 0)
+        actions = ToolbarRow(spacing=8)
         self.save_button = QPushButton("保存配置")
         self.save_button.setObjectName("PrimaryButton")
         self.save_button.clicked.connect(self._save)
-        action_layout.addWidget(self.save_button)
+        actions.add(self.save_button, ToolbarRow.REQUIRED)
+
         self.reset_button = QPushButton("恢复默认值")
         self.reset_button.clicked.connect(self._reset)
-        action_layout.addWidget(self.reset_button)
-        action_layout.addStretch(1)
+        actions.add(self.reset_button, ToolbarRow.HIGH)
+        actions.add_stretch()
+
         self.feedback = hint_label("")
-        action_layout.addWidget(self.feedback)
+        self.feedback.setWordWrap(False)
+        actions.add(self.feedback, ToolbarRow.NORMAL)
         root.addWidget(actions)
         root.addStretch(1)
 

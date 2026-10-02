@@ -30,7 +30,7 @@ from app.ui.main_window import MainWindow  # noqa: E402
 from app.ui import theme as theme_module  # noqa: E402
 
 #: 导航顺序：看板 / 分析与评论 / AI 助手 / 创作咨询 / AI 短剧 / 数据源 / 设置
-PAGES = ("dashboard", "analysis", "ai", "consulting", "drama", "data", "settings")
+PAGES = ("dashboard", "analysis", "ai", "consulting", "drama", "data", "skills", "settings")
 INDEX_DASHBOARD = 0
 INDEX_AI = 2
 INDEX_CONSULTING = 3

@@ -564,8 +564,10 @@ QTabBar::tab:selected {{
     font-weight: 600;
 }}
 QSplitter::handle {{ background-color: {c["border"]}; }}
-QSplitter::handle:horizontal {{ width: 1px; }}
-QSplitter::handle:vertical {{ height: 1px; }}
+QSplitter::handle:horizontal {{ width: 6px; }}
+QSplitter::handle:vertical {{ height: 6px; }}
+QSplitter::handle:hover {{ background-color: {rgba(c["cyan"], _alpha(140))}; }}
+QSplitter::handle:pressed {{ background-color: {c["cyan"]}; }}
 
 /* ---------- 滚动条 ---------- */
 QScrollBar:vertical {{ background: transparent; width: 8px; margin: 0; }}

@@ -2,7 +2,7 @@
 
 - 顶部：模型引擎状态条（引擎 / 上下文挂载 / 离线规则引擎）
 - 左栏：智能数据决策简报 + 爆款选题与建议矩阵
-- 右栏：创作顾问 Copilot 对话（结合实时数据上下文）
+- 右栏：AI 快速创作洞察摘要（与数据看板共用组件；对话已由窗口右侧常驻面板承担）
 - 底部：标题优化实验室 / 最佳发布时机决策 快捷入口
 """
 
@@ -24,7 +24,8 @@ from PySide6.QtWidgets import (
 
 from app.ui.context import AppContext
 from app.ui.theme import COLORS
-from app.ui.widgets.ai_chat import AiChatPanel
+from app.ui.widgets.insight_card import InsightBriefCard
+from app.ui.widgets.toolbar import ToolbarRow
 from app.ui.widgets.cards import Badge, ModuleCard, Pill, StatusDot, hint_label
 
 
@@ -49,41 +50,37 @@ class AiPage(QWidget):
         left.addWidget(self._build_topic_card())
         left.setSizes([420, 320])
         splitter.addWidget(left)
-        # 问答区复用「AI 咨询面板」：与右侧常驻面板共享同一会话上下文
-        self.chat_panel = AiChatPanel(self.context, compact=False)
-        splitter.addWidget(self.chat_panel)
+        # 右栏：AI 快速创作洞察摘要（与「数据看板」共用同一组件与同一份简报数据）；
+        # 对话咨询已由窗口右侧的常驻 AI 面板承担，此处不再重复嵌入聊天窗口。
+        self.insight_card = InsightBriefCard(self.context, action="generate")
+        splitter.addWidget(self.insight_card)
         splitter.setSizes([860, 520])
         root.addWidget(splitter, 1)
 
         root.addWidget(self._build_footer())
 
     def _build_engine_bar(self) -> QWidget:
-        bar = QWidget()
-        layout = QHBoxLayout(bar)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
-
-        title = QLabel("AI 决策助手")
+        bar = ToolbarRow(spacing=10)
+        title = bar.add(QLabel("AI 决策助手"), ToolbarRow.REQUIRED)
         title.setObjectName("PageTitle")
-        layout.addWidget(title)
 
         self.model_dot = StatusDot(COLORS["text_muted"])
         self.model_pill = Pill("模型引擎：未配置")
         self.context_pill = Pill("上下文：未挂载")
         self.local_pill = Pill("离线规则引擎：就绪", "cyan")
-        layout.addWidget(self.model_dot)
-        layout.addWidget(self.model_pill)
-        layout.addWidget(self.context_pill)
-        layout.addWidget(self.local_pill)
-        layout.addStretch(1)
+        bar.add(self.model_dot, ToolbarRow.HIGH)
+        bar.add(self.model_pill, ToolbarRow.HIGH)
+        bar.add(self.context_pill, ToolbarRow.NORMAL)
+        bar.add(self.local_pill, ToolbarRow.NORMAL)
+        bar.add_stretch()
 
         self.force_local_box = QCheckBox("仅用本地规则生成（不调用 API）")
-        layout.addWidget(self.force_local_box)
+        bar.add(self.force_local_box, ToolbarRow.NORMAL)
 
         self.brief_button = QPushButton("生成数据简报")
         self.brief_button.setObjectName("PrimaryButton")
         self.brief_button.clicked.connect(lambda: self._generate("daily_brief"))
-        layout.addWidget(self.brief_button)
+        bar.add(self.brief_button, ToolbarRow.REQUIRED)
         return bar
 
     def _build_brief_card(self) -> QWidget:
@@ -155,8 +152,6 @@ class AiPage(QWidget):
         for button in self.action_buttons.values():
             button.setEnabled(not busy)
         self.brief_button.setEnabled(not busy)
-        self.chat_panel.send_button.setEnabled(not busy)
-        self.chat_panel.status_label.setText(message)
         self.context.set_busy(busy, message)
 
     # ------------------------------------------------------------------ #

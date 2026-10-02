@@ -183,15 +183,28 @@ def publish_time_messages(metrics: dict[str, Any]) -> list[dict[str, str]]:
     return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user}]
 
 
-def chat_messages(metrics: dict[str, Any], question: str, history: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
+def chat_messages(
+    metrics: dict[str, Any],
+    question: str,
+    history: list[dict[str, str]] | None = None,
+    extra_system: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    """构建问答消息。
+
+    ``extra_system`` 用于注入**用户启用的技能提示词**与**可用工具说明**
+    （见 app/skills 与 app/mcp），会作为额外的 system 消息追加。
+    """
     context = metrics_to_context(metrics)
-    messages = [
+    messages: list[dict[str, Any]] = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {
             "role": "system",
             "content": f"当前可用的数据上下文如下（回答必须以此为准，不要编造）：\n{context}",
         },
     ]
+    for block in extra_system or []:
+        if block and block.strip():
+            messages.append({"role": "system", "content": block.strip()})
     for item in (history or [])[-6:]:
         role = item.get("role")
         if role in ("user", "assistant"):
