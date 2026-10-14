@@ -11,7 +11,7 @@ from PySide6.QtCore import QObject, Signal
 
 from app.ai import InsightService
 from app.analysis import analysis_date_options, run_daily_analysis
-from app.collect import archive_snapshots_csv, import_csv_dir, sync_sample_data
+from app.collect import archive_snapshots_csv, import_csv_dir
 from app.config import LOG_DIR, AppSettings, ensure_dirs, load_settings, migrate_legacy_config, save_settings
 from app.consulting import ConsultService
 from app.core.logging_setup import get_logger, setup_logging
@@ -290,22 +290,6 @@ class AppContext(QObject):
     # ------------------------------------------------------------------ #
     # 数据
     # ------------------------------------------------------------------ #
-    def sync_sample_data(self, days: int = 30, response: Any = None) -> None:
-        self.set_busy(True, "正在生成并导入样例数据…")
-
-        def done(result: Any) -> None:
-            self.set_busy(False, result.summary())
-            self.data_changed.emit()
-
-        self.runner.submit(
-            sync_sample_data,
-            done,
-            lambda err: self._on_error(err, "样例数据导入失败"),
-            self.db_url,
-            days=days,
-            export_csv=True,
-        )
-
     def import_csv(self, directory: Any = None) -> None:
         self.set_busy(True, "正在导入 CSV 数据…")
 
@@ -544,7 +528,11 @@ class AppContext(QObject):
         from app.db.repository import create_repo_sync_log
 
         repo = self.settings.data_repo
-        result = sync_repository(repo)
+        result = sync_repository(
+            repo,
+            progress=lambda text: self.status_message.emit(text),
+            proxy=self.settings.http_proxy,
+        )
         if not result.ok:
             create_repo_sync_log(self.db_url, result.action or "sync", f"失败：{result.error}")
             raise RuntimeError(result.error or "同步失败")

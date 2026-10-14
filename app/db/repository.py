@@ -41,10 +41,33 @@ def _use_session(db_url: str, session: Session | None) -> Iterator[Session]:
             yield s
 
 
+def _carries_value(value: Any) -> bool:
+    """判断字段值是否携带信息（用于避免"空值覆盖已有资料"）。
+
+    同一实体可能来自多个来源（如 ``accounts.csv`` 与作品里的 ``owner``/``author``），
+    后者常只有 ID，其余字段是 ``""``/``0`` 这类默认值；若直接覆盖会把完整资料清空。
+    """
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, bool):
+        return True  # False 是有效信息（未认证），不能当空值跳过
+    if isinstance(value, (int, float)):
+        return value != 0  # 计数类默认 0 视为"未采集"
+    if isinstance(value, (list, tuple, set, dict)):
+        return len(value) > 0
+    return True
+
+
 def upsert_account(
     db_url: str, payload: dict[str, Any], session: Session | None = None
 ) -> int:
-    """按 (platform, platform_account_id) 幂等写入账号，返回主键。"""
+    """按 (platform, platform_account_id) 幂等写入账号，返回主键。
+
+    字段级合并：**新值为空时不覆盖已有资料**；``verified`` 属单向信息，
+    不会因某个来源缺少该字段而把已认证的账号改回未认证。
+    """
     with _use_session(db_url, session) as s:
         row = s.scalar(
             select(Account).where(
@@ -69,14 +92,26 @@ def upsert_account(
             "source",
             "extra",
         ):
-            if key in payload and payload[key] is not None:
-                setattr(row, key, payload[key])
+            if key not in payload:
+                continue
+            value = payload[key]
+            if key == "verified":
+                # 认证是单向信息：不因来源缺少该字段而把已认证账号改回未认证
+                if value or not row.verified:
+                    row.verified = bool(value)
+                continue
+            if not _carries_value(value):
+                continue
+            setattr(row, key, value)
         s.flush()
         return row.id
 
 
 def upsert_video(db_url: str, payload: dict[str, Any], session: Session | None = None) -> int:
-    """按 (platform, platform_video_id) 幂等写入作品，返回主键。"""
+    """按 (platform, platform_video_id) 幂等写入作品，返回主键。
+
+    与账号一致：**空值不覆盖已有字段**，避免多来源导入时把已补全的内容清空。
+    """
     with _use_session(db_url, session) as s:
         row = s.scalar(
             select(Video).where(
@@ -103,8 +138,13 @@ def upsert_video(db_url: str, payload: dict[str, Any], session: Session | None =
             "topic",
             "extra",
         ):
-            if key in payload and payload[key] is not None:
-                setattr(row, key, payload[key])
+            if key not in payload:
+                continue
+            value = payload[key]
+            # 空值不覆盖：同一作品可能来自多个文件，空的旧字段不应盖掉已有内容
+            if not _carries_value(value):
+                continue
+            setattr(row, key, value)
         s.flush()
         return row.id
 
@@ -138,6 +178,7 @@ def upsert_snapshot(
             "favorite_count",
             "danmaku_count",
             "follower_gain",
+            "follower_count",
             "raw",
         ):
             if key in payload and payload[key] is not None:
@@ -549,7 +590,7 @@ def distinct_platforms(db_url: str) -> list[str]:
 
 
 def clear_all_data(db_url: str, keep_config_reports: bool = False) -> None:
-    """清空业务数据（用于重新导入样例或换库前的清理）。"""
+    """清空业务数据（换数据源或重新导入前的清理）。"""
     with session_scope(db_url) as s:
         s.execute(delete(ChatMessage))
         s.execute(delete(ChatSession))

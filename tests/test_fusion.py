@@ -59,6 +59,93 @@ def test_normalize_bilibili_video():
     assert payload["video_url"].endswith("/video/BV1TEST")
 
 
+# ---------------------------------------------------------------------- #
+# 与 docs/数据字典.md 对齐（平台原始字段来源）
+# ---------------------------------------------------------------------- #
+def test_bilibili_account_from_card_nested_payload():
+    """B站 web-interface/card 的嵌套结构：card.card.* 与 card.data.*。"""
+    payload = F.normalize_account(
+        "bilibili",
+        {
+            "mid": 100022032,
+            "card": {
+                "card": {
+                    "name": "橘子怪丶",
+                    "sign": "无限进步！｜商务合作…",
+                    "Official": {"type": 0, "desc": "个人认证"},
+                },
+                "data": {"follower": 18645768, "following": 686, "like_num": 128799308},
+            },
+        },
+    )
+
+    assert payload["platform_account_id"] == "100022032"
+    assert payload["nickname"] == "橘子怪丶"
+    assert payload["follower_count"] == 18645768
+    assert payload["following_count"] == 686
+    assert payload["total_favorite"] == 128799308
+    assert payload["verified"] is True, "Official.type >= 0 应视为已认证"
+    assert payload["signature"] == "无限进步！｜商务合作…"
+    assert payload["home_url"].endswith("/100022032")
+
+
+def test_bilibili_account_official_type_minus_one_is_unverified():
+    payload = F.normalize_account("bilibili", {"mid": 1, "card": {"card": {"Official": {"type": -1}}}})
+
+    assert payload["verified"] is False
+
+
+def test_bilibili_account_flat_fields_still_work():
+    """展平字段（老格式）不能因支持嵌套而失效。"""
+    payload = F.normalize_account("bilibili", {"mid": 7, "name": "老格式", "follower": 123})
+
+    assert payload["nickname"] == "老格式"
+    assert payload["follower_count"] == 123
+
+
+def test_bilibili_video_topic_from_tname_and_tags_fallback():
+    payload = F.normalize_video(
+        "bilibili",
+        {"bvid": "BV1X", "title": "标题", "desc": "随手拍 #城市 #生活方式", "tname": "综合"},
+    )
+
+    assert payload["topic"] == "综合", "tname → topic"
+    assert payload["tags"] == ["城市", "生活方式"], "标签缺失时从简介的 #话题# 兜底"
+
+
+def test_bilibili_video_prefers_real_tags_over_hashtags():
+    payload = F.normalize_video("bilibili", {"bvid": "BV1X", "tag": "LPL|LOL", "desc": "#无关#"})
+
+    assert payload["tags"] == ["LPL", "LOL"]
+
+
+def test_douyin_account_total_favorited():
+    payload = F.normalize_account("douyin", {"uid": "200001", "total_favorited": 286000})
+
+    assert payload["total_favorite"] == 286000
+
+
+def test_douyin_video_image_text_by_aweme_type():
+    payload = F.normalize_video("douyin", {"aweme_id": "7X", "desc": "图文", "aweme_type": 68})
+
+    assert payload["content_type"] == "image_text"
+
+
+def test_douyin_video_cover_from_video_block():
+    payload = F.normalize_video(
+        "douyin",
+        {"aweme_id": "7X", "desc": "x", "video": {"cover": {"url_list": ["http://c/1.jpg"]}}},
+    )
+
+    assert payload["cover_url"] == "http://c/1.jpg"
+
+
+def test_douyin_video_stays_video_without_image_flags():
+    payload = F.normalize_video("douyin", {"aweme_id": "7X", "desc": "x", "aweme_type": 0})
+
+    assert payload["content_type"] == "video"
+
+
 def test_normalize_douyin_video_uses_desc_as_title_and_hashtags():
     payload = F.normalize_video(
         "douyin",

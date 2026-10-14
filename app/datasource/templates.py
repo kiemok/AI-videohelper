@@ -19,7 +19,7 @@ VIDEO_HEADER = (
 )
 SNAPSHOT_HEADER = (
     "platform,platform_video_id,stat_date,view_count,like_count,comment_count,"
-    "share_count,favorite_count,danmaku_count,follower_gain"
+    "share_count,favorite_count,danmaku_count,follower_count,follower_gain"
 )
 COMMENT_HEADER = (
     "platform,platform_comment_id,platform_video_id,content,user_nickname,"
@@ -44,7 +44,8 @@ comments/YYYY-MM-DD.csv      评论（按日期分片）
 - **videos.csv**：platform, platform_video_id, account_platform_id, title, description, tags（用 | 分隔）,
   content_type, duration_sec, publish_time（YYYY-MM-DD HH:MM:SS）, cover_url, video_url, topic
 - **snapshots/*.csv**：platform, platform_video_id, stat_date, view_count, like_count, comment_count,
-  share_count, favorite_count, danmaku_count, follower_gain
+  share_count, favorite_count, danmaku_count, follower_count, follower_gain
+  （`follower_count` 为该账号在统计日的粉丝数，可留空；留空表示「未知」，不会按 0 计入）
 - **comments/*.csv**：platform, platform_comment_id, platform_video_id, content, user_nickname,
   like_count, publish_time
 
@@ -74,7 +75,12 @@ douyin/comments.json       [{ "cid": "...", "text": "...", "digg_count": 12 }]
 
 
 def write_data_templates(out_dir: Path | str) -> dict[str, Path]:
-    """在指定目录写出模板文件（不覆盖已有文件）。"""
+    """在指定目录写出模板文件。
+
+    - **数据模板 CSV 不覆盖已有文件**（避免冲掉用户已写入的真实数据）；
+    - **`DATA_FORMAT.md` 始终写为最新版本**：它是软件生成的格式说明（不含用户数据），
+      若存在旧版会被更新，避免仓库里的说明与当前软件要求脱节。
+    """
     root = Path(out_dir)
     root.mkdir(parents=True, exist_ok=True)
     today = date.today().isoformat()
@@ -83,7 +89,10 @@ def write_data_templates(out_dir: Path | str) -> dict[str, Path]:
     targets = {
         "accounts.csv": (ACCOUNT_HEADER, f"bilibili,100001,示例账号,132000,120,86000,1,简介,https://space.bilibili.com/100001"),
         "videos.csv": (VIDEO_HEADER, f"bilibili,BV1example,100001,示例标题,示例简介,数码|实测,video,215,{today} 20:00:00,,,数码测评"),
-        f"snapshots/{today}.csv": (SNAPSHOT_HEADER, f"bilibili,BV1example,{today},41000,3200,210,190,900,260,35"),
+        f"snapshots/{today}.csv": (
+            SNAPSHOT_HEADER,
+            f"bilibili,BV1example,{today},41000,3200,210,190,900,260,132000,35",
+        ),
         f"comments/{today}.csv": (COMMENT_HEADER, f"bilibili,bi_c_example,BV1example,讲得太清楚了,路过的风,88,{today} 21:10:00"),
     }
     for relative, (header, sample) in targets.items():
@@ -94,10 +103,10 @@ def write_data_templates(out_dir: Path | str) -> dict[str, Path]:
         path.write_text(header + "\n" + sample + "\n", encoding="utf-8-sig")
         written[relative] = path
 
+    # 格式说明始终写最新版本：该文件由软件生成、不含用户数据，旧版说明会与软件要求脱节
     readme = root / "DATA_FORMAT.md"
-    if not readme.exists():
-        readme.write_text(README_TEXT, encoding="utf-8")
-        written["DATA_FORMAT.md"] = readme
+    readme.write_text(README_TEXT, encoding="utf-8")
+    written["DATA_FORMAT.md"] = readme
 
     logger.info("数据模板已生成：%d 个文件 -> %s", len(written), root)
     return written

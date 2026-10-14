@@ -525,7 +525,6 @@ class MainWindow(QMainWindow):
             ("拉取 / 更新数据仓库", self.context.sync_data_repo),
             ("仅导入本地仓库目录", self.context.import_repo_local),
             ("生成数据模板", self.context.write_repo_templates),
-            ("载入演示数据（离线）", lambda: self.context.sync_sample_data()),
             ("归档指标快照", self.context.archive_data),
             ("重启本地引擎", self.data_page._restart_engine),
             ("清空全部业务数据", self.data_page.confirm_clear),

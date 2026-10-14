@@ -39,6 +39,7 @@ NUMERIC_FIELDS: dict[str, tuple[tuple[str, str], ...]] = {
         ("comment_count", "评论量"),
         ("share_count", "分享量"),
         ("favorite_count", "收藏量"),
+        ("follower_count", "粉丝数"),
     ),
 }
 

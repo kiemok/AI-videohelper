@@ -21,7 +21,6 @@ from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
-SAMPLE_DIR = DATA_DIR / "samples"
 ARCHIVE_DIR = DATA_DIR / "archive"
 LOG_DIR = PROJECT_ROOT / "logs"
 
@@ -100,19 +99,28 @@ class LLMSettings:
 _NESTED_TYPES: dict[str, type] = {}
 
 
+#: 默认数据仓库（B站 + 抖音采集并清洗后的数据资产；数据在 warehouse/ 子目录）
+DEFAULT_REPO_URL = "https://github.com/kiemok/AI-videohelper-data.git"
+DEFAULT_REPO_BRANCH = "master"
+DEFAULT_REPO_SUBDIR = "warehouse"
+
+
 @dataclass
 class DataRepoSettings:
     """数据仓库（Git）配置。
 
     数据由用户自建仓库提供（定期爬取后推送），软件只负责**拉取与导入**，
-    不在软件内部执行任何爬取行为。
+    不在软件内部执行任何爬取行为。默认指向内置数据仓库，用户可在
+    「数据仓库与导入」页改成自己的仓库地址或本地目录。
     """
 
-    url: str = ""  # 仓库地址（https / ssh / 本地路径 / 归档 ZIP 链接）
-    branch: str = "main"
+    url: str = DEFAULT_REPO_URL  # 仓库地址（https / ssh / 本地路径 / 归档 ZIP 链接）
+    branch: str = DEFAULT_REPO_BRANCH
     local_dir: str = ""  # 本地缓存目录，留空 = <项目根>/data/repo
-    subdir: str = ""  # 仓库内数据子目录，留空 = 仓库根目录
+    subdir: str = DEFAULT_REPO_SUBDIR  # 仓库内数据子目录，留空 = 仓库根目录
     mode: str = "auto"  # auto / git / zip / local
+    #: GitHub 加速镜像前缀（例如 https://ghfast.top/）；留空 = 直连失败后自动尝试内置镜像
+    mirror_prefix: str = ""
     auto_pull: bool = True  # 定时任务触发时是否先拉取最新数据
 
     def resolved_local_dir(self) -> Path:
@@ -255,24 +263,43 @@ def _build_dataclass(cls: type, data: dict[str, Any]) -> Any:
     return cls(**kwargs)  # type: ignore[arg-type]
 
 
+def ensure_default_repo(settings: AppSettings) -> bool:
+    """仓库地址与本地目录都为空时填入默认数据仓库（仅内存生效，不写配置文件）。
+
+    这样"从未配置过数据源"的用户打开软件即可直接点「拉取 / 更新数据」；
+    一旦在界面里填过仓库地址或本地目录，就完全按用户配置走（留空即回落到默认仓库）。
+    """
+    repo = settings.data_repo
+    if repo.url.strip() or repo.local_dir.strip():
+        return False
+    repo.url = DEFAULT_REPO_URL
+    if not repo.branch.strip() or repo.branch == "main":
+        repo.branch = DEFAULT_REPO_BRANCH
+    if not repo.subdir.strip():
+        repo.subdir = DEFAULT_REPO_SUBDIR
+    return True
+
+
 def load_settings(path: Path | None = None) -> AppSettings:
     """读取配置；文件不存在或损坏时回退到默认配置。
 
     未显式指定 ``path`` 时，会先尝试把旧版「项目内 config/settings.json」迁移到用户目录
-    （幂等，见 :func:`migrate_legacy_config`）。
+    （幂等，见 :func:`migrate_legacy_config`）；返回前补齐默认数据仓库
+    （见 :func:`ensure_default_repo`）。
     """
     if path is None:
         migrate_legacy_config()
     path = path or config_path()
-    if not path.exists():
-        return AppSettings()
-    try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(raw, dict):
-            return AppSettings()
-        return _build_dataclass(AppSettings, raw)
-    except (OSError, json.JSONDecodeError, TypeError):
-        return AppSettings()
+    settings = AppSettings()
+    if path.exists():
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                settings = _build_dataclass(AppSettings, raw)
+        except (OSError, json.JSONDecodeError, TypeError):
+            settings = AppSettings()
+    ensure_default_repo(settings)
+    return settings
 
 
 def save_settings(settings: AppSettings, path: Path | None = None) -> Path:
@@ -288,5 +315,5 @@ def save_settings(settings: AppSettings, path: Path | None = None) -> Path:
 
 def ensure_dirs() -> None:
     """确保运行期目录存在。"""
-    for d in (DEFAULT_CONFIG_PATH.parent, DATA_DIR, SAMPLE_DIR, ARCHIVE_DIR, LOG_DIR):
+    for d in (DEFAULT_CONFIG_PATH.parent, DATA_DIR, ARCHIVE_DIR, LOG_DIR):
         d.mkdir(parents=True, exist_ok=True)

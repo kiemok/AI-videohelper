@@ -10,7 +10,6 @@
 对外入口：
 - ``import_batch``         ：导入一批原始数据（平台原始字段 → fusion 归一化）
 - ``import_csv_dir``       ：导入统一字段的 CSV 目录（手工/历史数据）
-- ``sync_sample_data``     ：载入**演示数据**（离线生成，用于无仓库时的体验与自检）
 - ``archive_snapshots_csv``：指标快照归档
 """
 
@@ -32,8 +31,7 @@ from app.collect.fusion import (
     to_datetime,
     to_int,
 )
-from app.collect.sample_source import build_sample_batch, export_sample_csv
-from app.config import ARCHIVE_DIR, SAMPLE_DIR
+from app.config import ARCHIVE_DIR
 from app.core.logging_setup import get_logger
 from app.db.base import session_scope
 from app.db.repository import (
@@ -55,7 +53,7 @@ def _detect_platform(raw: dict[str, Any], default: str = "") -> str:
     return default or "bilibili"
 
 
-def import_batch(db_url: str, batch: RawBatch, archive_csv: bool = False) -> ImportResult:
+def import_batch(db_url: str, batch: RawBatch) -> ImportResult:
     """把一批原始数据融合归一化后写入统一模型（幂等，可重复执行）。"""
     result = ImportResult(source=batch.source or batch.platform)
     account_ids: dict[tuple[str, str], int] = {}
@@ -118,28 +116,8 @@ def import_batch(db_url: str, batch: RawBatch, archive_csv: bool = False) -> Imp
                 upsert_comment(db_url, comment_payload, session=s)
                 result.comments += 1
 
-    if archive_csv:
-        try:
-            written = export_sample_csv(batch)
-            result.csv_files = {k: str(v) for k, v in written.items()}
-        except (OSError, ValueError) as exc:  # 导出失败不影响入库结果
-            logger.warning("导出样例 CSV 失败: %s", exc)
-
     logger.info("数据导入完成: %s", result.summary())
     return result
-
-
-def sync_sample_data(
-    db_url: str,
-    days: int = 30,
-    seed: int = 2024,
-    platforms: tuple[str, ...] | None = None,
-    export_csv: bool = True,
-) -> ImportResult:
-    """载入离线**演示数据**（无数据仓库时用于体验与自检，非真实数据）。"""
-    batch = build_sample_batch(days=days, seed=seed, platforms=platforms)
-    batch.source = "演示数据"
-    return import_batch(db_url, batch, archive_csv=export_csv)
 
 
 # --------------------------------------------------------------------------- #
@@ -160,9 +138,9 @@ def _parse_dt(value: Any) -> datetime | None:
     return None
 
 
-def import_csv_dir(db_url: str, directory: Path | str | None = None) -> ImportResult:
-    """从 CSV 目录导入统一字段数据（字段定义见 sample_source._CSV_FIELDS）。"""
-    directory = Path(directory or SAMPLE_DIR)
+def import_csv_dir(db_url: str, directory: Path | str) -> ImportResult:
+    """从 CSV 目录导入统一字段数据（列定义见 ``docs/数据格式规范.md``）。"""
+    directory = Path(directory)
     result = ImportResult(source=f"CSV:{directory.name}")
     account_ids: dict[tuple[str, str], int] = {}
     video_ids: dict[tuple[str, str], int] = {}

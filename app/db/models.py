@@ -115,6 +115,8 @@ class VideoMetricSnapshot(Base):
     favorite_count: Mapped[int] = mapped_column(Integer, default=0)
     danmaku_count: Mapped[int] = mapped_column(Integer, default=0)
     follower_gain: Mapped[int] = mapped_column(Integer, default=0)  # 当日带动涨粉
+    #: 该账号在统计日的粉丝数（账号级快照值；未知时为 NULL，不按 0 计）
+    follower_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     raw: Mapped[dict] = mapped_column(JSON, default=dict)  # 平台原始字段留档
 
     video: Mapped[Video] = relationship(back_populates="snapshots")

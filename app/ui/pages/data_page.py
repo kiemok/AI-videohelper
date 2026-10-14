@@ -4,7 +4,7 @@
 软件内不再包含任何爬取逻辑。本页负责：
 
 - 仓库配置：地址 / 分支 / 本地目录 / 数据子目录 / 获取方式（自动、仅 git、仅 ZIP、仅本地）/ 自动拉取
-- 同步操作：拉取并导入、仅导入本地目录、生成数据模板、载入演示数据
+- 同步操作：拉取并导入、仅导入本地目录、生成数据模板
 - 状态遥测：仓库状态（commit / 数据文件数 / 最近更新）、本地存储体积、统一实体映射表
 - 数据清单：作品 / 账号 / 指标快照 / 同步记录
 """
@@ -230,12 +230,17 @@ class DataPage(QWidget):
         form.addWidget(QLabel("本地缓存目录"), 3, 0)
         form.addWidget(self.local_edit, 3, 1, 1, 3)
 
-        form.addWidget(QLabel("获取方式"), 4, 0)
+        self.mirror_edit = QLineEdit()
+        self.mirror_edit.setPlaceholderText("GitHub 加速前缀，如 https://ghfast.top/（留空 = 失败后自动试内置镜像）")
+        form.addWidget(QLabel("加速镜像"), 4, 0)
+        form.addWidget(self.mirror_edit, 4, 1, 1, 3)
+
+        form.addWidget(QLabel("获取方式"), 5, 0)
         self.mode_bar = SegmentBar([(label, key) for label, key in _REPO_MODES], current="auto")
-        form.addWidget(self.mode_bar, 4, 1, 1, 3)
+        form.addWidget(self.mode_bar, 5, 1, 1, 3)
 
         self.auto_pull_box = QCheckBox("每日定时任务触发时先自动拉取仓库")
-        form.addWidget(self.auto_pull_box, 5, 1, 1, 3)
+        form.addWidget(self.auto_pull_box, 6, 1, 1, 3)
         card.add_widget(grid)
 
         status_row = QWidget()
@@ -263,24 +268,12 @@ class DataPage(QWidget):
         validation_layout.addWidget(self.report_button)
         card.add_widget(validation_row)
 
-        demo_row = QWidget()
-        demo_layout = QHBoxLayout(demo_row)
-        demo_layout.setContentsMargins(0, 0, 0, 0)
-        demo_layout.setSpacing(8)
-        demo_layout.addWidget(QLabel("样例天数"))
-        self.days_spin = QSpinBox()
-        self.days_spin.setRange(7, 180)
-        self.days_spin.setValue(30)
-        demo_layout.addWidget(self.days_spin)
-        self.demo_button = QPushButton("载入演示数据（离线生成）")
-        self.demo_button.clicked.connect(
-            lambda: self.context.sync_sample_data(days=self.days_spin.value())
-        )
-        demo_layout.addWidget(self.demo_button)
-        demo_layout.addStretch(1)
-        card.add_widget(demo_row)
         card.add_widget(
-            muted_label("提示：演示数据仅用于无仓库时体验界面与自检，建议接入真实仓库后清空重导。")
+            muted_label(
+                "默认数据仓库：GitHub kiemok/AI-videohelper-data（数据在 warehouse/ 子目录）——"
+                "点右上角「拉取 / 更新数据」即可导入。没有网络时，把数据放到本机文件夹，"
+                "再填到「本地缓存目录」并用「仅本地目录」方式离线导入。"
+            )
         )
         card.body_layout.addStretch(1)
         return card
@@ -439,6 +432,7 @@ class DataPage(QWidget):
         self.branch_edit.setText(repo.branch or "main")
         self.subdir_edit.setText(repo.subdir)
         self.local_edit.setText(repo.local_dir)
+        self.mirror_edit.setText(getattr(repo, "mirror_prefix", "") or "")
         self.mode_bar.set_current(repo.mode or "auto")
         self.auto_pull_box.setChecked(bool(repo.auto_pull))
 
@@ -449,6 +443,7 @@ class DataPage(QWidget):
             subdir=self.subdir_edit.text().strip(),
             local_dir=self.local_edit.text().strip(),
             mode=str(self.mode_bar.current_key() or "auto"),
+            mirror_prefix=self.mirror_edit.text().strip(),
             auto_pull=self.auto_pull_box.isChecked(),
         )
 

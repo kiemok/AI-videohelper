@@ -1,8 +1,11 @@
 """离线自检脚本：不启动界面，验证「采集/导入 → 存储 → 分析 → AI 解读」全链路。
 
 用法（项目根目录）：
-    .venv\\Scripts\\python.exe scripts\\smoke_check.py            # 自动导入样例数据
+    .venv\\Scripts\\python.exe scripts\\smoke_check.py            # 用合成夹具数据跑全链路
     .venv\\Scripts\\python.exe scripts\\smoke_check.py --no-import # 只用已有数据
+
+软件已**不含演示数据功能**：默认用 ``scripts/_fixture.py`` 生成的**最小合成数据集**
+（2 账号 / 4 作品 / 数天快照与评论）跑通链路，仅用于自检。
 """
 
 from __future__ import annotations
@@ -10,13 +13,17 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # scripts/_fixture.py
 
+from _fixture import write_fixture_repo  # noqa: E402
 from app.ai import InsightService  # noqa: E402
 from app.analysis import run_daily_analysis  # noqa: E402
-from app.collect import archive_snapshots_csv, import_csv_dir, sync_sample_data  # noqa: E402
+from app.collect import archive_snapshots_csv, import_csv_dir  # noqa: E402
+from app.datasource.loader import import_repository, scan_repository  # noqa: E402
 from app.config import ensure_dirs, load_settings  # noqa: E402
 from app.db.base import init_db  # noqa: E402
 from app.db.repository import data_overview  # noqa: E402
@@ -24,9 +31,9 @@ from app.db.repository import data_overview  # noqa: E402
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="多源数据融合与AI决策系统 - 离线自检")
-    parser.add_argument("--no-import", action="store_true", help="跳过样例数据导入")
-    parser.add_argument("--csv", action="store_true", help="额外验证 CSV 重新导入")
-    parser.add_argument("--days", type=int, default=30, help="样例数据天数")
+    parser.add_argument("--no-import", action="store_true", help="跳过自检数据导入")
+    parser.add_argument("--csv", action="store_true", help="额外验证 CSV 目录导入（幂等）")
+    parser.add_argument("--days", type=int, default=5, help="自检快照天数（≥4 天才能覆盖趋势与拐点）")
     args = parser.parse_args()
 
     if hasattr(sys.stdout, "reconfigure"):
@@ -38,17 +45,19 @@ def main() -> int:
     print(f"[1/6] 数据库：{db_url}")
     init_db(db_url)
 
+    fixture: Path | None = None
     if not args.no_import:
-        result = sync_sample_data(db_url, days=args.days)
-        print(f"[2/6] 样例数据导入：{result.summary()}")
-        if result.csv_files:
-            print("      CSV 已导出：" + "、".join(Path(p).name for p in result.csv_files.values()))
+        fixture = Path(tempfile.mkdtemp(prefix="ccd-smoke-"))
+        write_fixture_repo(fixture, days=args.days)
+        result = import_repository(db_url, scan_repository(fixture), source="自检夹具")
+        print(f"[2/6] 自检数据导入：{result.summary()}")
+        print(f"      夹具目录：{fixture}（脚本合成的自检数据，非产品功能）")
     else:
-        print("[2/6] 跳过样例数据导入")
+        print("[2/6] 跳过数据导入")
 
-    if args.csv:
-        csv_result = import_csv_dir(db_url)
-        print(f"[3/6] CSV 重新导入（幂等校验）：{csv_result.summary()}")
+    if args.csv and fixture is not None:
+        csv_result = import_csv_dir(db_url, fixture)
+        print(f"[3/6] CSV 目录重新导入（幂等校验）：{csv_result.summary()}")
     else:
         print("[3/6] 跳过 CSV 导入")
 

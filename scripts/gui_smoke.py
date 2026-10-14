@@ -18,13 +18,16 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # scripts/_fixture.py
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")  # 必须在导入 Qt 之前设置
 
 from PySide6.QtCore import QTimer  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
+from _fixture import write_fixture_repo  # noqa: E402
 from app.config import ensure_dirs  # noqa: E402
+from app.datasource.loader import import_repository, scan_repository  # noqa: E402
 from app.ui.context import AppContext  # noqa: E402
 from app.ui.main_window import MainWindow  # noqa: E402
 from app.ui import theme as theme_module  # noqa: E402
@@ -75,9 +78,15 @@ class Driver:
         phase = self.phase
 
         if phase == "import":
-            log("[gui] 同步离线样例数据…")
-            self.context.sync_sample_data(days=30)
-            self.phase = "wait_import"
+            log("[gui] 导入自检数据…")
+            fixture = Path(tempfile.mkdtemp(prefix="ccd-gui-smoke-"))
+            write_fixture_repo(fixture, days=5)
+            result = import_repository(
+                self.context.db_url, scan_repository(fixture), source="自检夹具"
+            )
+            self.context.data_changed.emit()
+            log("[gui] 自检数据导入：" + result.summary())
+            self.phase = "analysis"
 
         elif phase == "wait_import":
             if not self.context.busy:

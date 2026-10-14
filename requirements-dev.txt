@@ -1,5 +1,6 @@
-# 开发与测试依赖（运行软件本身不需要）
+# 开发、测试与文档工具依赖（运行软件本身不需要）
 #
 # 安装（国内镜像）：
 #   pip install -r requirements-dev.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-pytest>=8.0            # 单元测试框架（tests/ 下 6 组测试）
+pytest>=8.0            # 单元测试框架（tests/ 下 7 组测试）
+python-docx>=1.1       # Markdown → Word 导出（scripts/md_to_docx.py，生成毕业设计交付文档）

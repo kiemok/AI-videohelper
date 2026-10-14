@@ -177,11 +177,11 @@ def build_repo(root: Path) -> None:
         encoding="utf-8",
     )
 
-    (repo / "README.md").write_text("# 演示数据仓库\n\n仅用于端到端验证。\n", encoding="utf-8")
+    (repo / "README.md").write_text("# 自检数据仓库\n\n仅用于端到端验证。\n", encoding="utf-8")
     _git(["init", "-q", "-b", "main"], cwd=repo)
     _git(["add", "-A"], cwd=repo)
-    _git(["-c", "user.email=check@local", "-c", "user.name=check", "commit", "-qm", "demo data"], cwd=repo)
-    log(f"[1/5] 已创建演示数据仓库：{repo}")
+    _git(["-c", "user.email=check@local", "-c", "user.name=check", "commit", "-qm", "fixture"], cwd=repo)
+    log(f"[1/5] 已创建自检数据仓库：{repo}")
 
 
 def main() -> int:

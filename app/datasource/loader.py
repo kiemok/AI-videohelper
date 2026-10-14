@@ -34,6 +34,7 @@ from app.collect.fusion import (
     normalize_account,
     normalize_comment,
     normalize_snapshot,
+    normalize_tags,
     normalize_video,
     to_bool,
     to_date,
@@ -76,8 +77,12 @@ _PLATFORM_HINTS: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 
 #: 平台原始字段特征（用于判断走融合映射还是统一字段直读）
-_RAW_ACCOUNT_KEYS = {"mid", "uid", "official_verify", "favoriting_count", "total_favorited"}
-_RAW_VIDEO_KEYS = {"bvid", "aweme_id", "aid", "desc", "stat", "statistics", "pubdate", "create_time"}
+_RAW_ACCOUNT_KEYS = {"mid", "uid", "card", "official_verify", "favoriting_count", "total_favorited"}
+_RAW_VIDEO_KEYS = {
+    "bvid", "aweme_id", "aid", "desc", "stat", "statistics", "pubdate", "create_time",
+    # 见 docs/数据字典.md：tname → topic、aweme_type == 68 → 图文
+    "tname", "aweme_type",
+}
 _RAW_COMMENT_KEYS = {"rpid", "cid", "member", "message", "digg_count", "ctime"}
 
 
@@ -505,16 +510,15 @@ def _account_from_unified(row: dict[str, Any], platform: str) -> dict[str, Any]:
 
 
 def _video_from_unified(row: dict[str, Any], platform: str) -> dict[str, Any]:
-    tags = _first(row, "tags", default=[])
-    if isinstance(tags, str):
-        tags = [t for t in tags.replace("|", ",").split(",") if t.strip()]
+    # 复用融合层的标签归一化：统一支持 | , ， ; ； 分隔（与 docs/数据格式规范.md 一致）
+    tags = normalize_tags(_first(row, "tags", default=[]))
     return {
         "platform": platform,
         "platform_video_id": str(_first(row, "platform_video_id", "video_id", "id")),
         "account_platform_id": str(_first(row, "account_platform_id", "platform_account_id", "author_id")),
         "title": str(_first(row, "title", "name")),
         "description": str(_first(row, "description", "desc")),
-        "tags": list(tags or []),
+        "tags": tags,
         "content_type": str(_first(row, "content_type", default="video")),
         "duration_sec": to_int(_first(row, "duration_sec", "duration", default=0)),
         "publish_time": to_datetime(_first(row, "publish_time", "pubdate", "create_time")),
@@ -529,6 +533,10 @@ def _snapshot_from_unified(
     row: dict[str, Any], platform: str, fallback_date: date | None = None
 ) -> dict[str, Any]:
     stat_date = to_date(_first(row, "stat_date", "date")) or fallback_date or date.today()
+    # 粉丝数是账号级快照值：留空表示「未知」而不是 0，因此单独判断后再转数值
+    # （与原始 JSON 路径 normalize_snapshot 的行为保持一致）
+    follower_raw = _first(row, "follower_count", default=None)
+    follower_count = to_int(follower_raw) if str(follower_raw or "").strip() else None
     return {
         "platform": platform,
         "stat_date": stat_date,
@@ -538,6 +546,7 @@ def _snapshot_from_unified(
         "share_count": to_int(_first(row, "share_count", "shares", default=0)),
         "favorite_count": to_int(_first(row, "favorite_count", "favorites", "collect_count", default=0)),
         "danmaku_count": to_int(_first(row, "danmaku_count", default=0)),
+        "follower_count": follower_count,
         "follower_gain": to_int(_first(row, "follower_gain", default=0)),
         "raw": {"provider": platform, "source": "repo"},
     }

@@ -97,19 +97,44 @@ def extract_hashtags(text: str) -> list[str]:
 # 账号
 # --------------------------------------------------------------------------- #
 def normalize_account(platform: str, raw: dict[str, Any]) -> dict[str, Any]:
-    """平台账号原始字段 → 统一 Account 字段。"""
+    """平台账号原始字段 → 统一 Account 字段。
+
+    B站同时支持 ``web-interface/card`` 的**嵌套结构**（``card.card.*`` / ``card.data.*``，
+    见 `docs/数据字典.md`）与已展平的字段名（``name`` / ``follower`` / ``total_favorited`` …）。
+    """
     if platform == "bilibili":
+        card = raw.get("card") if isinstance(raw.get("card"), dict) else {}
+        profile = card.get("card") if isinstance(card.get("card"), dict) else {}
+        stats = card.get("data") if isinstance(card.get("data"), dict) else {}
+        mid = (
+            raw.get("mid")
+            or card.get("mid")
+            or profile.get("mid")
+            or stats.get("mid")
+            or raw.get("platform_account_id")
+            or ""
+        )
+        official = profile.get("Official") or card.get("Official") or raw.get("Official")
+        if isinstance(official, dict) and official.get("type") is not None:
+            # card.card.Official.type：-1 为未认证，>= 0 为已认证
+            verified = to_int(official.get("type"), default=-1) >= 0
+        else:
+            verified = to_bool(raw.get("official_verify", raw.get("verified", False)))
         return {
             "platform": "bilibili",
-            "platform_account_id": str(raw.get("mid") or raw.get("platform_account_id") or ""),
-            "nickname": raw.get("name") or raw.get("nickname") or "",
-            "follower_count": to_int(raw.get("follower", raw.get("follower_count"))),
-            "following_count": to_int(raw.get("following", raw.get("following_count"))),
-            "total_favorite": to_int(raw.get("total_favorited", raw.get("total_favorite"))),
-            "verified": to_bool(raw.get("official_verify", raw.get("verified", False))),
-            "signature": raw.get("sign") or raw.get("signature") or "",
-            "home_url": raw.get("home_url") or "",
-            "source": raw.get("source") or "sample",
+            "platform_account_id": str(mid),
+            "nickname": raw.get("name") or profile.get("name") or raw.get("nickname") or "",
+            "follower_count": to_int(raw.get("follower", stats.get("follower", raw.get("follower_count")))),
+            "following_count": to_int(
+                raw.get("following", stats.get("following", raw.get("following_count")))
+            ),
+            "total_favorite": to_int(
+                raw.get("total_favorited", stats.get("like_num", raw.get("total_favorite")))
+            ),
+            "verified": verified,
+            "signature": raw.get("sign") or profile.get("sign") or raw.get("signature") or "",
+            "home_url": raw.get("home_url") or (f"https://space.bilibili.com/{mid}" if mid else ""),
+            "source": raw.get("source") or "repo",
             "extra": {"raw_provider": "bilibili"},
         }
     return {
@@ -118,13 +143,15 @@ def normalize_account(platform: str, raw: dict[str, Any]) -> dict[str, Any]:
         "nickname": raw.get("nickname") or raw.get("name") or "",
         "follower_count": to_int(raw.get("follower_count", raw.get("follower"))),
         "following_count": to_int(raw.get("following_count", raw.get("following"))),
-        "total_favorite": to_int(raw.get("favoriting_count", raw.get("total_favorite"))),
+        "total_favorite": to_int(
+            raw.get("total_favorited", raw.get("favoriting_count", raw.get("total_favorite")))
+        ),
         "verified": to_bool(
             raw.get("custom_verify") or raw.get("enterprise_verify_reason") or raw.get("verified", False)
         ),
         "signature": raw.get("signature") or raw.get("sign") or "",
         "home_url": raw.get("home_url") or "",
-        "source": raw.get("source") or "sample",
+        "source": raw.get("source") or "repo",
         "extra": {"raw_provider": "douyin"},
     }
 
@@ -133,40 +160,52 @@ def normalize_account(platform: str, raw: dict[str, Any]) -> dict[str, Any]:
 # 作品
 # --------------------------------------------------------------------------- #
 def normalize_video(platform: str, raw: dict[str, Any]) -> dict[str, Any]:
-    """平台作品原始字段 → 统一 Video 字段。"""
+    """平台作品原始字段 → 统一 Video 字段。
+
+    字段来源见 `docs/数据字典.md`：B站 ``tname`` → ``topic``、``tag`` → ``tags``（列表接口
+    不返回标签时兜底取简介里的 ``#话题#``）；抖音 ``aweme_type == 68`` 判图文、
+    封面在 ``video.cover.url_list[0]``。
+    """
     if platform == "bilibili":
         bvid = str(raw.get("bvid") or raw.get("platform_video_id") or "")
         owner = raw.get("owner") or {}
         title = raw.get("title") or ""
+        desc = raw.get("desc") or raw.get("description") or ""
+        tags = normalize_tags(raw.get("tag") or raw.get("tags")) or extract_hashtags(desc)
         return {
             "platform": "bilibili",
             "platform_video_id": bvid,
             "account_platform_id": str(owner.get("mid") or raw.get("account_platform_id") or ""),
             "title": title,
-            "description": raw.get("desc") or raw.get("description") or "",
-            "tags": normalize_tags(raw.get("tag") or raw.get("tags")),
+            "description": desc,
+            "tags": tags,
             "content_type": "video",
             "duration_sec": to_int(raw.get("duration", raw.get("duration_sec"))),
             "publish_time": to_datetime(raw.get("pubdate") or raw.get("publish_time")),
             "cover_url": raw.get("pic") or raw.get("cover_url") or "",
             "video_url": raw.get("video_url") or (f"https://www.bilibili.com/video/{bvid}" if bvid else ""),
-            "topic": raw.get("topic") or "",
+            "topic": raw.get("topic") or raw.get("tname") or "",
             "extra": {"aid": raw.get("aid"), "raw_provider": "bilibili"},
         }
 
     aweme_id = str(raw.get("aweme_id") or raw.get("platform_video_id") or "")
     author = raw.get("author") or {}
     desc = raw.get("desc") or raw.get("description") or ""
-    cover = raw.get("cover") or {}
+    video_block = raw.get("video") if isinstance(raw.get("video"), dict) else {}
     cover_url = raw.get("cover_url") or ""
-    if not cover_url and isinstance(cover, dict):
-        urls = cover.get("url_list") or []
-        cover_url = urls[0] if urls else ""
+    if not cover_url:
+        for candidate in (raw.get("cover"), video_block.get("cover")):
+            if isinstance(candidate, dict):
+                urls = candidate.get("url_list") or []
+                if urls:
+                    cover_url = urls[0]
+                    break
     duration_ms = to_int(raw.get("duration", raw.get("duration_sec")))
     duration_sec = raw.get("duration_sec")
     if duration_sec is None:
         duration_sec = duration_ms // 1000  # 抖音 duration 为毫秒
     images = raw.get("images") or []
+    is_image_text = bool(images) or to_int(raw.get("aweme_type"), default=0) == 68  # 68 = 图文
     return {
         "platform": "douyin",
         "platform_video_id": aweme_id,
@@ -174,7 +213,7 @@ def normalize_video(platform: str, raw: dict[str, Any]) -> dict[str, Any]:
         "title": (raw.get("title") or desc)[:120],
         "description": desc,
         "tags": normalize_tags(raw.get("tags")) or extract_hashtags(desc),
-        "content_type": "image_text" if images else "video",
+        "content_type": "image_text" if is_image_text else "video",
         "duration_sec": to_int(duration_sec),
         "publish_time": to_datetime(raw.get("create_time") or raw.get("publish_time")),
         "cover_url": cover_url,
