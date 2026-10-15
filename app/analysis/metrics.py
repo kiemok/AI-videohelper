@@ -7,8 +7,9 @@
 - **互动率** ``engagement_rate``：当日新增互动 / 当日新增播放（当日口径，对趋势更敏感）；
   另有 ``cum_engagement_rate`` 为累计互动 / 累计播放。
 - **日增长率** ``growth_rate``：当日新增播放 / 前一日累计播放。
-- **传播健康度** ``health_score``（0~100）：互动率、收藏率（沉淀价值）、分享率（破圈能力）、
-  增长率四项归一化后加权求和，权重见 ``HEALTH_WEIGHTS``。
+- **传播健康度** ``health_score``（0~100）：**分平台适配**的四项加权 —— 互动强度、沉淀价值（收藏占比）、
+  破圈能力（分享占比）、增长动能；参考上限按**真实数据 P75 标定**（见 ``HEALTH_REFERENCE``），
+  平台**不可获取**的指标不参与计分（见 ``PLATFORM_CAPABILITIES``），单日样本缺"增长"时权重让给其它维度。
 """
 
 from __future__ import annotations
@@ -22,10 +23,61 @@ import pandas as pd
 STAT_COLUMNS = ("view_count", "like_count", "comment_count", "share_count", "favorite_count", "danmaku_count")
 DELTA_COLUMNS = tuple("d_" + c for c in STAT_COLUMNS)
 
-#: 传播健康度权重（互动率 / 收藏率 / 分享率 / 增长率）
-HEALTH_WEIGHTS = {"engagement": 0.40, "favorite": 0.20, "share": 0.20, "growth": 0.20}
-#: 各分项归一化参考上限（达到该值记满分）
-HEALTH_REFERENCE = {"engagement": 0.10, "favorite": 0.025, "share": 0.012, "growth": 0.20}
+#: 各平台**接口可获取**的指标（详见 docs/接口能力与缺口.md）：
+#: B站六项统计齐全；抖音接口不返回播放量（``play_count`` 恒为 0）且没有弹幕。
+PLATFORM_CAPABILITIES: dict[str, frozenset[str]] = {
+    "bilibili": frozenset(STAT_COLUMNS),
+    "douyin": frozenset({"like_count", "comment_count", "share_count", "favorite_count"}),
+}
+#: 平台不在能力表里时的兜底（按 B站全量处理）
+DEFAULT_CAPABILITIES = PLATFORM_CAPABILITIES["bilibili"]
+
+
+def platform_capabilities(platform: str) -> frozenset[str]:
+    """该平台可获取的统计项。"""
+    return PLATFORM_CAPABILITIES.get(str(platform or "").lower(), DEFAULT_CAPABILITIES)
+
+
+def platform_has_views(platform: str) -> bool:
+    """该平台能否拿到播放量（抖音不能，相关指标必须换口径）。"""
+    return "view_count" in platform_capabilities(platform)
+
+
+def platform_missing_metrics(platform: str) -> list[str]:
+    """该平台无法获取的统计项（界面显示"— / 不适用"，而不是伪装成 0）。"""
+    caps = platform_capabilities(platform)
+    return [column for column in STAT_COLUMNS if column not in caps]
+
+
+#: 传播健康度权重：互动强度 / 沉淀价值 / 破圈能力 / 增长动能
+HEALTH_WEIGHTS = {"strength": 0.30, "favorite": 0.25, "share": 0.20, "growth": 0.25}
+#: 分项参考上限 = **真实数据（2692 作品 / 4639 快照）P75 标定**，达到即满分；
+#: 某维度数据不可得时（如单日样本没有"增长"），其权重按比例让给其它维度。
+HEALTH_REFERENCE: dict[str, dict[str, float]] = {
+    "bilibili": {
+        "strength_view": 0.10,  # 互动量 / 当日新增播放（实测 P75 = 11.3%）
+        "favorite_share": 0.25,  # 收藏 / 当日互动（实测 P75 = 25.0%）
+        "share_share": 0.04,  # 分享 / 当日互动（实测 P75 = 3.9%）
+        "growth": 0.20,  # 当日互动 / 前一日累计互动
+    },
+    "douyin": {
+        "engagement_p90": 30000.0,  # 无播放量 → 当日互动量对数归一（实测 P90 = 29,528）
+        "favorite_share": 0.12,  # 实测 P75 = 11.9%
+        "share_share": 0.12,  # 实测 P75 = 12.3%
+        "growth": 0.20,
+    },
+}
+#: 柔化指数：分项得分按 ``(实际/参考) ** 0.7`` 压缩，避免线性映射把中位水平压得过低
+HEALTH_CURVE = 0.7
+
+
+def _num(value: Any) -> float:
+    """转 float，无法转换或 NaN 时返回 0.0。"""
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    return 0.0 if np.isnan(result) else result
 
 
 def safe_div(numerator: float, denominator: float) -> float:
@@ -101,20 +153,77 @@ def compute_video_daily(df: pd.DataFrame) -> pd.DataFrame:
         ["engagement_rate", "cum_engagement_rate", "favorite_rate", "share_rate", "comment_rate", "growth_rate"]
     ].fillna(0.0)
 
+    # 平台无关的"互动结构"指标：以**当日互动量**为分母（B站与抖音都能算）
+    engagement_base = out["daily_engagement"].replace(0, np.nan)
+    out["favorite_share"] = (out["d_favorite_count"] / engagement_base).fillna(0.0)
+    out["share_share"] = (out["d_share_count"] / engagement_base).fillna(0.0)
+    out["comment_share"] = (out["d_comment_count"] / engagement_base).fillna(0.0)
+
+    # 增长动能：当日互动 / 前一日累计互动；只有一天样本时为 NaN（该维度不计分）
+    prev_engagement = grouped["engagement"].shift(1).astype("float64")
+    out["prev_engagement"] = prev_engagement
+    out["daily_engagement_growth"] = np.where(
+        prev_engagement.fillna(0) > 0,
+        out["daily_engagement"] / prev_engagement.replace(0, np.nan),
+        np.nan,
+    )
+
     out["health_score"] = out.apply(health_score, axis=1)
     return out
 
 
 def health_score(row: pd.Series) -> float:
-    """传播健康度（0~100）。"""
-    parts = {
-        "engagement": safe_div(row.get("engagement_rate", 0), HEALTH_REFERENCE["engagement"]),
-        "favorite": safe_div(row.get("favorite_rate", 0), HEALTH_REFERENCE["favorite"]),
-        "share": safe_div(row.get("share_rate", 0), HEALTH_REFERENCE["share"]),
-        "growth": safe_div(max(0.0, row.get("growth_rate", 0)), HEALTH_REFERENCE["growth"]),
+    """传播健康度（0~100）：分平台适配的四项加权。
+
+    - **互动强度**：B站 = 当日互动 / 当日新增播放；抖音无播放量 → 当日互动量的对数归一；
+    - **沉淀价值**：收藏 / 当日互动；
+    - **破圈能力**：分享 / 当日互动；
+    - **增长动能**：当日互动 / 前一日累计互动（只有一天样本时不参与计分，权重让给其它维度）。
+    """
+    platform = str(row.get("platform") or "bilibili").lower()
+    reference = HEALTH_REFERENCE.get(platform, HEALTH_REFERENCE["bilibili"])
+    daily_engagement = _num(row.get("daily_engagement"))
+
+    parts: dict[str, float] = {
+        "favorite": safe_div(_num(row.get("favorite_share")), reference["favorite_share"]),
+        "share": safe_div(_num(row.get("share_share")), reference["share_share"]),
     }
-    score = sum(HEALTH_WEIGHTS[k] * min(1.0, max(0.0, v)) for k, v in parts.items())
-    return round(score * 100, 2)
+    if platform_has_views(platform):
+        parts["strength"] = safe_div(_num(row.get("engagement_rate")), reference["strength_view"])
+    else:
+        parts["strength"] = safe_div(
+            float(np.log1p(max(0.0, daily_engagement))),
+            float(np.log1p(reference["engagement_p90"])),
+        )
+
+    weights = dict(HEALTH_WEIGHTS)
+    growth = row.get("daily_engagement_growth")
+    if growth is None or (isinstance(growth, float) and np.isnan(growth)):
+        weights.pop("growth", None)  # 单日样本：增长维度无区分度，权重让给其它三项
+    else:
+        parts["growth"] = safe_div(max(0.0, _num(growth)), reference["growth"])
+
+    total_weight = sum(weights.values()) or 1.0
+    score = 0.0
+    for key, weight in weights.items():
+        value = max(0.0, parts.get(key, 0.0))
+        score += weight * min(1.0, value**HEALTH_CURVE)
+    return round(score / total_weight * 100, 2)
+
+
+def active_mean_health(part: pd.DataFrame) -> float:
+    """只统计「当日有互动」作品的平均健康度。
+
+    **0 互动的作品（刚发布、还没开始传播）不等于"不健康"**：把它们计入均值会把
+    整体健康度系统性拉低（实测 1859 个 B站作品里当天有 866 个 0 互动）。
+    界面会同时展示参与统计的作品数，保证口径透明。
+    """
+    if part.empty:
+        return 0.0
+    active = part[part["daily_engagement"] > 0]
+    if active.empty:
+        return 0.0
+    return round(float(active["health_score"].mean()), 2)
 
 
 def daily_series(df_enriched: pd.DataFrame) -> list[dict[str, Any]]:
@@ -133,7 +242,7 @@ def daily_series(df_enriched: pd.DataFrame) -> list[dict[str, Any]]:
                 "total_views": int(part["view_count"].sum()),
                 "daily_engagement": engagement,
                 "engagement_rate": round(safe_div(engagement, views) * 100, 3),
-                "health_score": round(float(part["health_score"].mean()), 2),
+                "health_score": active_mean_health(part),
                 "follower_gain": int(part["follower_gain"].sum()),
                 "video_count": int(part["video_id"].nunique()),
             }
@@ -164,11 +273,11 @@ def platform_compare(df_enriched: pd.DataFrame, stat_date: date | None = None) -
             "cum_engagement_rate": round(
                 safe_div(part["engagement"].sum(), part["view_count"].sum()) * 100, 3
             ),
-            "health_score": round(float(part["health_score"].mean()), 2),
+            "health_score": active_mean_health(part),
             "follower_gain": int(part["follower_gain"].sum()),
             "video_count": int(part["video_id"].nunique()),
             "week_daily_views": int(week_part["daily_views"].sum()),
-            "week_health_score": round(float(week_part["health_score"].mean()), 2) if not week_part.empty else 0.0,
+            "week_health_score": active_mean_health(week_part),
         }
     return result
 
@@ -191,7 +300,7 @@ def daily_series_by_platform(df_enriched: pd.DataFrame) -> dict[str, list[dict[s
                     "daily_views": views,
                     "daily_engagement": engagement,
                     "engagement_rate": round(safe_div(engagement, views) * 100, 3),
-                    "health_score": round(float(day["health_score"].mean()), 2),
+                    "health_score": active_mean_health(day),
                     "follower_gain": int(day["follower_gain"].sum()),
                 }
             )
@@ -216,8 +325,9 @@ def funnel_summary(
         today[["comment_count", "favorite_count", "share_count", "danmaku_count"]].sum(axis=1).sum()
     )
     follows = int(today["follower_gain"].sum())
+    # 抖音接口不返回播放量（见 docs/接口能力与缺口.md），漏斗首层实际只统计可获取该指标的平台
     rows = (
-        ("曝光展示 → 完播（Plays）", views),
+        ("曝光展示（仅 B站可获取）", views),
         ("内容点赞（Likes）", likes),
         ("深度互动（评论 / 收藏 / 分享）", deep),
         ("关注转化（Followers Added）", follows),
@@ -228,29 +338,68 @@ def funnel_summary(
     ]
 
 
-def summarize_videos(df_enriched: pd.DataFrame, stat_date: date | None = None, top_n: int = 8) -> list[dict[str, Any]]:
-    """作品榜：按当日新增播放排序，含互动率、健康度、日增长率。"""
-    if df_enriched.empty:
+def summarize_videos(
+    df_enriched: pd.DataFrame,
+    stat_date: date | None = None,
+    top_n: int = 8,
+    sort: str = "fresh",
+) -> list[dict[str, Any]]:
+    """作品榜（两种口径，界面可切换）。
+
+    - ``sort="fresh"``（默认）：**当日新发布的作品**，按发布时间倒序（最新发布的排最前）；
+      当天没有新发布作品时回退为「最近发布的一批作品」，避免看板空白。
+    - ``sort="engagement"``：当日**互动量最高**的 N 条作品（跨平台统一口径 —— 抖音不返回
+      播放量，"按互动量排序"比"按播放量排序"更公平）。
+
+    平台接口**不提供**的指标以 ``None`` 返回（界面显示"—"），而不是伪装成 0
+    —— 例如抖音不返回播放量（见 ``docs/接口能力与缺口.md``）。
+    """
+    if df_enriched.empty or "publish_time" not in df_enriched.columns:
         return []
     stat_date = stat_date or max(df_enriched["stat_date"])
-    latest = df_enriched[df_enriched["stat_date"] == stat_date].copy()
-    latest["title_short"] = latest["title"].astype(str).str.slice(0, 40)
-    latest = latest.sort_values("daily_views", ascending=False).head(top_n)
-    return [
-        {
-            "title": row["title"],
-            "platform": row["platform"],
-            "account": row.get("account", ""),
-            "stat_date": str(row["stat_date"]),
-            "view_count": int(row["view_count"]),
-            "daily_views": int(row["daily_views"]),
-            "daily_engagement": int(row["daily_engagement"]),
-            "engagement_rate": round(float(row["engagement_rate"]) * 100, 3),
-            "growth_rate": round(float(row["growth_rate"]) * 100, 2),
-            "health_score": float(row["health_score"]),
-        }
-        for _, row in latest.iterrows()
-    ]
+    today = df_enriched[df_enriched["stat_date"] == stat_date].copy()
+    if today.empty:
+        return []
+    today["publish_date"] = pd.to_datetime(today["publish_time"], errors="coerce").dt.date
+
+    is_new_today = False
+    if sort == "engagement":
+        picked = today.sort_values("daily_engagement", ascending=False).head(top_n)
+    else:
+        picked = today[today["publish_date"] == stat_date]
+        is_new_today = not picked.empty
+        if not is_new_today:
+            # 当天没有新发布 → 回退为最近发布的一批（按发布时间倒序）
+            picked = today.dropna(subset=["publish_date"])
+            if picked.empty:
+                return []
+        picked = picked.sort_values("publish_date", ascending=False).head(top_n)
+
+    rows: list[dict[str, Any]] = []
+    for _, row in picked.iterrows():
+        platform = str(row.get("platform") or "")
+        has_views = platform_has_views(platform)
+        rows.append(
+            {
+                "title": row.get("title") or "",
+                "platform": platform,
+                "publish_time": str(row.get("publish_time") or "")[:16],
+                "publish_date": str(row.get("publish_date") or ""),
+                "stat_date": str(row["stat_date"]),
+                # 平台不可得的指标返回 None → 界面显示"—"
+                "view_count": int(row["view_count"]) if has_views else None,
+                "daily_views": int(row["daily_views"]) if has_views else None,
+                "daily_engagement": int(row["daily_engagement"]),
+                "engagement_rate": (
+                    round(float(row["engagement_rate"]) * 100, 3) if has_views else None
+                ),
+                "favorite_share": round(float(row.get("favorite_share") or 0) * 100, 2),
+                "share_share": round(float(row.get("share_share") or 0) * 100, 2),
+                "health_score": float(row["health_score"]),
+                "is_new_today": is_new_today,
+            }
+        )
+    return rows
 
 
 def summarize_accounts(df_enriched: pd.DataFrame, stat_date: date | None = None) -> list[dict[str, Any]]:
@@ -270,7 +419,7 @@ def summarize_accounts(df_enriched: pd.DataFrame, stat_date: date | None = None)
                 "week_daily_views": views,
                 "week_engagement": engagement,
                 "engagement_rate": round(safe_div(engagement, views) * 100, 3),
-                "health_score": round(float(part["health_score"].mean()), 2),
+                "health_score": active_mean_health(part),
                 "follower_gain": int(part["follower_gain"].sum()),
                 "video_count": int(part["video_id"].nunique()),
             }
@@ -301,6 +450,7 @@ def headline(df_enriched: pd.DataFrame, stat_date: date | None = None) -> dict[s
             "daily_engagement": 0,
             "engagement_rate": 0.0,
             "health_score": 0.0,
+            "health_videos": 0,
             "follower_gain": 0,
             "video_count": 0,
             "active_videos": 0,
@@ -321,7 +471,8 @@ def headline(df_enriched: pd.DataFrame, stat_date: date | None = None) -> dict[s
         "cum_engagement_rate": round(
             safe_div(today_df["engagement"].sum(), today_df["view_count"].sum()) * 100, 3
         ),
-        "health_score": round(float(today_df["health_score"].mean()), 2),
+        "health_score": active_mean_health(today_df),
+        "health_videos": int((today_df["daily_engagement"] > 0).sum()),
         "follower_gain": int(today_df["follower_gain"].sum()),
         "video_count": int(today_df["video_id"].nunique()),
         "active_videos": int((today_df["daily_views"] > 0).sum()),

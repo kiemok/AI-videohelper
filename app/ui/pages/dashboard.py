@@ -36,13 +36,14 @@ from app.ui.widgets.charts import FunnelBars, TrendChart
 from app.ui.widgets.tables import Column, DictTableModel, configure_table
 
 TOP_COLUMNS = [
-    Column("platform", "平台", 60),
-    Column("title", "作品", 260),
-    Column("account", "账号", 90),
-    Column("daily_views", "当日播放", 96, lambda v: f"{int(v):,}", Qt.AlignRight | Qt.AlignVCenter),
-    Column("engagement_rate", "互动率", 82, lambda v: f"{float(v):.2f}%", Qt.AlignRight | Qt.AlignVCenter),
-    Column("growth_rate", "日增长", 76, lambda v: f"{float(v):.2f}%", Qt.AlignRight | Qt.AlignVCenter),
-    Column("health_score", "健康度", 70, lambda v: f"{float(v):.1f}", Qt.AlignRight | Qt.AlignVCenter),
+    Column("platform", "平台", 56),
+    Column("publish_time", "发布时间", 118),
+    Column("title", "作品", 230),
+    Column("daily_views", "当日播放", 92, lambda v: "—" if v is None else f"{int(v):,}", Qt.AlignRight | Qt.AlignVCenter),
+    Column("daily_engagement", "当日互动", 88, lambda v: f"{int(v):,}", Qt.AlignRight | Qt.AlignVCenter),
+    Column("favorite_share", "收藏占比", 82, lambda v: f"{float(v):.1f}%", Qt.AlignRight | Qt.AlignVCenter),
+    Column("share_share", "分享占比", 78, lambda v: f"{float(v):.1f}%", Qt.AlignRight | Qt.AlignVCenter),
+    Column("health_score", "健康度", 72, lambda v: f"{float(v):.1f}", Qt.AlignRight | Qt.AlignVCenter),
 ]
 
 class DashboardPage(QWidget):
@@ -94,7 +95,14 @@ class DashboardPage(QWidget):
         middle.setSizes([900, 460])
         # 不直接加入页面：它与「作品表现 TOP」一起放进可上下拖动的 body_splitter
 
-        self.top_card = ModuleCard("作品表现 TOP")
+        self.top_card = ModuleCard("今日新发布作品")
+        # 两种口径可切换（默认「最新发布」）：最新发布 / 当日互动最高
+        self.top_mode_bar = SegmentBar(
+            [("最新发布", "fresh"), ("当日互动最高", "engagement")], current="fresh"
+        )
+        self.top_mode_bar.selected.connect(lambda _key: self._render_top())
+        self.top_card.add_header_widget(self.top_mode_bar)
+        self._top_source: dict[str, list[dict[str, Any]]] = {}
         self.top_model = DictTableModel(TOP_COLUMNS)
         self.top_table = QTableView()
         self.top_table.setModel(self.top_model)
@@ -208,6 +216,20 @@ class DashboardPage(QWidget):
         self._run_analysis()
 
     # ------------------------------------------------------------------ #
+    def _render_top(self) -> None:
+        """按当前口径渲染作品榜（两种口径的结果都已包含在分析结果里）。"""
+        key = str(self.top_mode_bar.current_key() or "fresh")
+        rows = (self._top_source or {}).get(key) or []
+        if key == "engagement":
+            self.top_card.set_title("当日表现最强作品")
+            scope = "当日互动量最高（抖音无播放量，统一按互动量排序）"
+        else:
+            self.top_card.set_title("今日新发布作品")
+            is_new = bool(rows) and bool(rows[0].get("is_new_today"))
+            scope = "统计日新发布" if is_new else "当天无新发布，回退展示最近发布"
+        self.top_model.set_rows(rows)
+        self.top_card.set_subtitle(f"{scope}｜共 {len(rows)} 条")
+
     def render(self, metrics: dict[str, Any]) -> None:
         if not metrics:
             self.date_hint.setText("尚未载入分析结果：点击「立即同步数据」后再执行分析")
@@ -253,13 +275,14 @@ class DashboardPage(QWidget):
             [float(r.get("follower_gain", 0)) for r in trend],
         )
         health = float(head.get("health_score", 0))
+        health_videos = int(head.get("health_videos", 0) or 0)
         health_tone = "green" if health >= 60 else ("amber" if health >= 40 else "coral")
         self.kpi_cards[3].set_data(
             f"{health:.1f}",
             "/100",
-            "互动率·收藏率·分享率·增长率 加权",
+            "互动强度·收藏·分享·增长 加权（分平台口径）",
             health_tone,
-            "≥60 视为健康区间",
+            f"仅统计当日有互动的 {health_videos} 个作品",
             [float(r.get("health_score", 0)) for r in trend],
         )
 
@@ -278,5 +301,8 @@ class DashboardPage(QWidget):
         self.funnel_bars.set_rows(
             [(row.get("label", ""), int(row.get("value", 0))) for row in (metrics.get("funnel") or [])]
         )
-        self.top_model.set_rows(metrics.get("top_videos") or [])
-        self.top_card.set_subtitle(f"按当日新增播放排序｜共 {len(metrics.get('top_videos') or [])} 条")
+        self._top_source = {
+            "fresh": metrics.get("top_videos") or [],
+            "engagement": metrics.get("top_videos_by_engagement") or [],
+        }
+        self._render_top()

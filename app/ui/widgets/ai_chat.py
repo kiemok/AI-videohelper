@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QTextBrowser,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -55,12 +56,34 @@ class AiChatPanel(ModuleCard):
             new_chat.clicked.connect(context.reset_chat)
             self.add_header_widget(new_chat)
 
+        # 大模型 API 配置入口：对话区上方（面板标题栏右侧的 ⚙ 图标）
+        settings_button = QPushButton("⚙")
+        settings_button.setObjectName("Segment")
+        settings_button.setToolTip("大模型 API 配置（服务商 / API Key / 模型 / 代理）")
+        settings_button.setFixedWidth(34)
+        settings_button.clicked.connect(self._open_llm_settings)
+        self.add_header_widget(settings_button)
+
         self.view = QTextBrowser()
         self.view.setPlaceholderText("向 AI 提问：回答会结合当前分析结果与评论数据。")
         self.add_widget(self.view, 1)
 
         self.status_label = muted_label("")
         self.add_widget(self.status_label)
+
+        # 示例提问：放在聊天区**底部**（消息区下方、输入框上方），纵向排列，点击直接提问
+        quick_box = QWidget()
+        quick_layout = QVBoxLayout(quick_box)
+        quick_layout.setContentsMargins(0, 0, 0, 0)
+        quick_layout.setSpacing(4)
+        quick_layout.addWidget(muted_label("试试这样问："))
+        for question in QUICK_QUESTIONS:
+            button = QPushButton(question)
+            button.setObjectName("Segment")
+            button.setToolTip("点击直接提问")
+            button.clicked.connect(lambda _checked=False, text=question: self.ask_preset(text))
+            quick_layout.addWidget(button)
+        self.add_widget(quick_box)
 
         input_row = QWidget()
         row_layout = QHBoxLayout(input_row)
@@ -75,22 +98,6 @@ class AiChatPanel(ModuleCard):
         row_layout.addWidget(self.question_edit, 1)
         row_layout.addWidget(self.send_button)
         self.add_widget(input_row)
-
-        quick_row = QWidget()
-        quick_layout = QHBoxLayout(quick_row)
-        quick_layout.setContentsMargins(0, 0, 0, 0)
-        quick_layout.setSpacing(6)
-        picks = QUICK_QUESTIONS[:2] if compact else QUICK_QUESTIONS[:3]
-        for question in picks:
-            button = QPushButton(question if len(question) <= 14 else question[:13] + "…")
-            button.setObjectName("Segment")
-            button.setToolTip(question)
-            button.clicked.connect(
-                lambda _checked=False, text=question: self.ask_preset(text)
-            )
-            quick_layout.addWidget(button)
-        quick_layout.addStretch(1)
-        self.add_widget(quick_row)
 
         self.force_local_box = QCheckBox("仅用本地规则生成（不调用大模型 API）")
         self.add_widget(self.force_local_box)
@@ -107,6 +114,14 @@ class AiChatPanel(ModuleCard):
         self.refresh_status()
 
     # ------------------------------------------------------------------ #
+    def _open_llm_settings(self) -> None:
+        """打开大模型 API 配置对话框（与设置页读写同一份配置）。"""
+        from app.ui.widgets.llm_settings_dialog import LlmSettingsDialog
+
+        dialog = LlmSettingsDialog(self.context, self)
+        dialog.exec()
+        self.refresh_status()
+
     def ask_preset(self, question: str) -> None:
         """用快捷问题发起咨询。"""
         self.question_edit.setText(question)

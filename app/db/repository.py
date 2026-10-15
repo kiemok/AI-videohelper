@@ -426,7 +426,13 @@ def list_snapshots(
     """扁平化快照列表（每行含 video_id / 平台 / 日期 / 各指标 / 账号）。"""
     with session_scope(db_url) as s:
         stmt = (
-            select(VideoMetricSnapshot, Video.platform_video_id, Video.title, Account.nickname)
+            select(
+                VideoMetricSnapshot,
+                Video.platform_video_id,
+                Video.title,
+                Video.publish_time,
+                Account.nickname,
+            )
             .join(Video, Video.id == VideoMetricSnapshot.video_id)
             .outerjoin(Account, Account.id == Video.account_id)
             .order_by(VideoMetricSnapshot.stat_date)
@@ -443,6 +449,7 @@ def list_snapshots(
                 "video_id": snap.video_id,
                 "platform_video_id": pvid,
                 "title": title,
+                "publish_time": publish_time,
                 "account": nickname or "",
                 "platform": snap.platform,
                 "stat_date": snap.stat_date,
@@ -454,7 +461,7 @@ def list_snapshots(
                 "danmaku_count": snap.danmaku_count,
                 "follower_gain": snap.follower_gain,
             }
-            for snap, pvid, title, nickname in s.execute(stmt).all()
+            for snap, pvid, title, publish_time, nickname in s.execute(stmt).all()
         ]
 
 

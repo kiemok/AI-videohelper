@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.analysis.metrics import platform_has_views
 from app.config import PLATFORM_LABELS, platform_label
 from app.db.repository import list_videos
 from app.ui.context import AppContext
@@ -39,10 +40,11 @@ from app.ui.widgets.tables import Column, DictTableModel, configure_table
 
 RANK_COLUMNS = [
     Column("platform", "平台", 56),
-    Column("title", "作品标题", 320),
+    Column("title", "作品标题", 280),
+    Column("content_type", "类型", 62, lambda v: "图文" if v == "image_text" else "视频"),
     Column("account", "账号", 76),
     Column("publish_time", "发布日期", 96, lambda v: str(v)[:10] if v else "—"),
-    Column("view_count", "累计播放", 88, lambda v: f"{int(v):,}", Qt.AlignRight | Qt.AlignVCenter),
+    Column("view_count", "累计播放", 88, lambda v: "—" if v is None else f"{int(v):,}", Qt.AlignRight | Qt.AlignVCenter),
     Column("like_count", "点赞", 68, lambda v: f"{int(v):,}", Qt.AlignRight | Qt.AlignVCenter),
     Column("comment_count", "评论", 62, lambda v: f"{int(v):,}", Qt.AlignRight | Qt.AlignVCenter),
     Column("favorite_count", "收藏", 62, lambda v: f"{int(v):,}", Qt.AlignRight | Qt.AlignVCenter),
@@ -152,7 +154,22 @@ class AnalysisPage(QWidget):
         self.search_edit.returnPressed.connect(self._reload)
         bar.add(self.search_edit, ToolbarRow.NORMAL)
 
-        self.sort_bar = SegmentBar([("按播放排序", "views"), ("按点赞排序", "likes")], current="views")
+        self.type_bar = SegmentBar(
+            [("全部类型", ""), ("视频", "video"), ("图文", "image_text")], current=""
+        )
+        self.type_bar.selected.connect(lambda _key: self._reload())
+        bar.add(self.type_bar, ToolbarRow.NORMAL)
+
+        self.sort_bar = SegmentBar(
+            [
+                ("最新发布", "publish_time"),
+                ("播放量", "view_count"),
+                ("点赞", "like_count"),
+                ("评论", "comment_count"),
+                ("收藏", "favorite_count"),
+            ],
+            current="publish_time",
+        )
         self.sort_bar.selected.connect(lambda _key: self._reload())
         bar.add(self.sort_bar, ToolbarRow.NORMAL)
         bar.add_stretch()
@@ -172,11 +189,40 @@ class AnalysisPage(QWidget):
     def _reload(self) -> None:
         platform = self.platform_bar.current_key() or None
         keyword = self.search_edit.text().strip() or None
-        self._videos = list_videos(self.context.db_url, platform=platform, keyword=keyword)
-        key = "like_count" if self.sort_bar.current_key() == "likes" else "view_count"
-        self._videos.sort(key=lambda row: row.get(key) or 0, reverse=True)
+        content_type = self.type_bar.current_key() or None
+        rows = list_videos(self.context.db_url, platform=platform, keyword=keyword)
+
+        # 平台能力差异：抖音接口不返回播放量 → 界面显示"—"，不伪装成 0
+        for row in rows:
+            if not platform_has_views(str(row.get("platform") or "")):
+                row["view_count"] = None
+        if content_type:
+            rows = [row for row in rows if (row.get("content_type") or "video") == content_type]
+
+        sort_key = self.sort_bar.current_key() or "publish_time"
+        if sort_key == "publish_time":
+            rows.sort(key=lambda row: str(row.get("publish_time") or ""), reverse=True)
+        else:
+            rows.sort(key=lambda row: row.get(sort_key) or 0, reverse=True)
+
+        self._videos = rows
         self.rank_model.set_rows(self._videos)
-        self.rank_card.set_subtitle(f"共 {len(self._videos)} 条记录")
+        filters = [
+            name
+            for name, active in (("平台", bool(platform)), ("类型", bool(content_type)), ("关键词", bool(keyword)))
+            if active
+        ]
+        scope = "｜筛选：" + "、".join(filters) if filters else "｜全平台"
+        sort_labels = {
+            "publish_time": "最新发布",
+            "view_count": "播放量",
+            "like_count": "点赞",
+            "comment_count": "评论",
+            "favorite_count": "收藏",
+        }
+        self.rank_card.set_subtitle(
+            f"共 {len(self._videos)} 条记录{scope}｜按 {sort_labels.get(sort_key, sort_key)} 排序"
+        )
 
     def refresh_status(self) -> None:
         self.refresh()
@@ -258,7 +304,7 @@ class AnalysisPage(QWidget):
             f"指标快照 {int(span.get('snapshot_rows', 0)):,} 条",
             "cyan",
             f"{span.get('start')} ~ {span.get('end')}",
-            [float(r.get("view_count", 0)) for r in videos[:12]][::-1],
+            [float(r.get("view_count") or 0) for r in videos[:12]][::-1],
         )
         self.kpi_cards[1].set_data(
             f"{int(sentiment.get('total', 0)):,}",

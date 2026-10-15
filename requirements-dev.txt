@@ -2,5 +2,6 @@
 #
 # 安装（国内镜像）：
 #   pip install -r requirements-dev.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-pytest>=8.0            # 单元测试框架（tests/ 下 7 组测试）
+pytest>=8.0            # 单元测试框架（tests/ 下 9 组测试）
 python-docx>=1.1       # Markdown → Word 导出（scripts/md_to_docx.py，生成毕业设计交付文档）
+python-pptx>=1.0       # 开题报告 PPT 生成（scripts/slides_build.py）

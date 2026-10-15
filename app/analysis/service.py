@@ -137,6 +137,7 @@ def run_daily_analysis(
         "trend_by_platform": trend_by_platform,
         "funnel": M.funnel_summary(enriched, last_date),
         "top_videos": M.summarize_videos(enriched, last_date),
+        "top_videos_by_engagement": M.summarize_videos(enriched, last_date, sort="engagement"),
         "accounts": M.summarize_accounts(enriched, last_date),
         "anomalies": anomaly.detect_turning_points(window_df)[:25],
         "overall_anomalies": anomaly.detect_overall_trend(trend),

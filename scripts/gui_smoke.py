@@ -116,14 +116,14 @@ class Driver:
             self.phase = "brief"
 
         elif phase == "brief":
-            log("[gui] 触发数据简报生成…")
+            log("[gui] 触发选题建议生成…")
             self.window.nav.setCurrentRow(INDEX_AI)
-            self.window.ai_page._generate("daily_brief")
+            self.window.ai_page._generate("topic_suggestion")
             self.phase = "wait_brief"
 
         elif phase == "wait_brief":
             if not self.context.busy:
-                log("[gui] 数据简报生成结束")
+                log("[gui] 选题建议生成结束")
                 self.phase = "chat"
 
         elif phase == "chat":
